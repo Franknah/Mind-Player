@@ -1,0 +1,18 @@
+/* MyAudioPlayer {
+    border: 1px solid rgb(229, 229, 229);
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: 10px;
+    background-color: rgb(255, 255, 255);
+} */
+QLabel{
+
+    color:black
+}
+QToolButton{
+    color:black;
+    border-color:white
+}
+QToolButton:hover{
+    color: blue
+}
