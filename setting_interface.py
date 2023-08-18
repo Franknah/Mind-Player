@@ -4,13 +4,14 @@ from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, FolderListSetti
                             OptionsSettingCard, RangeSettingCard, PushSettingCard,
                             ColorSettingCard, HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
                             ComboBoxSettingCard, ExpandLayout, Theme, InfoBar, CustomColorSettingCard,
-                            setTheme, setThemeColor, isDarkTheme,FluentTranslator)
+                            setTheme, setThemeColor, isDarkTheme, FluentTranslator)
 from qfluentwidgets import FluentIcon as FIF
-from qframelesswindow import FramelessWindow,StandardTitleBar
-from PySide6.QtCore import Qt, Signal, QUrl, QStandardPaths,QTranslator
-from PySide6.QtGui import QDesktopServices,QIcon
-from PySide6.QtWidgets import QWidget, QLabel, QFontDialog, QFileDialog,QHBoxLayout, QApplication
+from qframelesswindow import FramelessWindow, StandardTitleBar
+from PySide6.QtCore import Qt, Signal, QUrl, QStandardPaths, QTranslator
+from PySide6.QtGui import QDesktopServices, QIcon
+from PySide6.QtWidgets import QWidget, QLabel, QFontDialog, QFileDialog, QHBoxLayout, QApplication
 import sys
+
 
 class SettingInterface(ScrollArea):
     """ Setting interface """
@@ -20,7 +21,7 @@ class SettingInterface(ScrollArea):
     acrylicEnableChanged = Signal(bool)
     downloadFolderChanged = Signal(str)
     minimizeToTrayChanged = Signal(bool)
-    
+
     def __init__(self):
         super().__init__()
         self.scrollWidget = QWidget()
@@ -34,7 +35,8 @@ class SettingInterface(ScrollArea):
         self.musicFolderCard = FolderListSettingCard(
             cfg.musicFolders,
             self.tr("Local music library"),
-            directory=QStandardPaths.writableLocation(QStandardPaths.MusicLocation),
+            directory=QStandardPaths.writableLocation(
+                QStandardPaths.MusicLocation),
             parent=self.musicInThisPCGroup
         )
         self.downloadFolderCard = PushSettingCard(
@@ -46,7 +48,8 @@ class SettingInterface(ScrollArea):
         )
 
         # personalization
-        self.personalGroup = SettingCardGroup(self.tr('Personalization'), self.scrollWidget)
+        self.personalGroup = SettingCardGroup(
+            self.tr('Personalization'), self.scrollWidget)
 
         self.themeCard = OptionsSettingCard(
             cfg.themeMode,
@@ -59,12 +62,12 @@ class SettingInterface(ScrollArea):
             ],
             parent=self.personalGroup
         )
-        self.effctCard=ComboBoxSettingCard(
+        self.effctCard = ComboBoxSettingCard(
             cfg.effect,
             FIF.TRANSPARENT,
             self.tr('窗口效果'),
             self.tr("在 Mind Player 启用窗口效果"),
-            ["云母效果 ","亚克力效果","无        "],
+            ["云母效果 ", "亚克力效果", "无        "],
             parent=self.personalGroup
         )
 
@@ -79,14 +82,11 @@ class SettingInterface(ScrollArea):
 
         # online music
 
-
         # desktop lyric
 
-
-
-
         # main panel
-        self.mainPanelGroup = SettingCardGroup(self.tr('Main Panel'), self.scrollWidget)
+        self.mainPanelGroup = SettingCardGroup(
+            self.tr('Main Panel'), self.scrollWidget)
         self.minimizeToTrayCard = SwitchSettingCard(
             FIF.MINIMIZE,
             self.tr('Minimize to tray after closing'),
@@ -96,7 +96,8 @@ class SettingInterface(ScrollArea):
         )
 
         # update software
-        self.updateSoftwareGroup = SettingCardGroup(self.tr("Software update"), self.scrollWidget)
+        self.updateSoftwareGroup = SettingCardGroup(
+            self.tr("Software update"), self.scrollWidget)
         self.updateOnStartUpCard = SwitchSettingCard(
             FIF.UPDATE,
             self.tr('Check for updates when the application starts'),
@@ -112,7 +113,8 @@ class SettingInterface(ScrollArea):
             self.tr('Open help page'),
             FIF.HELP,
             self.tr('Help'),
-            self.tr('Discover new features and learn useful tips about PyQt-Fluent-Widgets'),
+            self.tr(
+                'Discover new features and learn useful tips about PyQt-Fluent-Widgets'),
             self.aboutGroup
         )
         self.feedbackCard = PrimaryPushSettingCard(
@@ -130,7 +132,7 @@ class SettingInterface(ScrollArea):
             self.tr('Version') + f" {VERSION}",
             self.aboutGroup
         )
-        self.configCard=PrimaryPushSettingCard(
+        self.configCard = PrimaryPushSettingCard(
             "打开配置文件",
             FIF.SETTING,
             "配置",
@@ -161,15 +163,10 @@ class SettingInterface(ScrollArea):
         self.musicInThisPCGroup.addSettingCard(self.musicFolderCard)
         self.musicInThisPCGroup.addSettingCard(self.downloadFolderCard)
 
-        
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.effctCard)
- 
+
         self.personalGroup.addSettingCard(self.languageCard)
-
-
-
-
 
         self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
 
@@ -184,7 +181,6 @@ class SettingInterface(ScrollArea):
         self.expandLayout.setContentsMargins(60, 10, 60, 0)
         self.expandLayout.addWidget(self.musicInThisPCGroup)
         self.expandLayout.addWidget(self.personalGroup)
- 
 
         self.expandLayout.addWidget(self.mainPanelGroup)
         self.expandLayout.addWidget(self.updateSoftwareGroup)
@@ -244,10 +240,8 @@ class SettingInterface(ScrollArea):
             self.__onDownloadFolderCardClicked)
 
         # personalization
- 
- 
+
         # playing interface
- 
 
         # main panel
         self.minimizeToTrayCard.checkedChanged.connect(
@@ -255,9 +249,12 @@ class SettingInterface(ScrollArea):
 
         # about
         self.aboutCard.clicked.connect(self.checkUpdateSig)
-        self.configCard.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile("config\config.json")))
+        self.configCard.clicked.connect(lambda: QDesktopServices.openUrl(
+            QUrl.fromLocalFile("config\config.json")))
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
+
+
 if __name__ == '__main__':
     class Window(FramelessWindow):
 

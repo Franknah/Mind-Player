@@ -15,7 +15,7 @@ class SongQuality(Enum):
     HIGH = "High quality"
     SUPER = "Super quality"
     LOSSLESS = "Lossless quality"
- 
+
 
 class MvQuality(Enum):
     """ MV quality enumeration class """
@@ -54,9 +54,9 @@ class Config(QConfig):
     downloadFolder = ConfigItem(
         "Folders", "Download", "download", FolderValidator())
     lyricFolders = ConfigItem(
-        "Folders", "Lyric", 
+        "Folders", "Lyric",
         {}
-        
+
     )
 
     # online
@@ -77,8 +77,8 @@ class Config(QConfig):
         "MainWindow", "RecentPlayNumbers", 300, RangeValidator(10, 300))
     dpiScale = OptionsConfigItem(
         "MainWindow", "DpiScale", "Auto", OptionsValidator([1, 1.25, 1.5, 1.75, 2, "Auto"]), restart=True)
-    effect=OptionsConfigItem(
-        "MainWindow", "Effect", True,OptionsValidator(["Mica","Acrylic","Off"]),restart=True)
+    effect = OptionsConfigItem(
+        "MainWindow", "Effect", True, OptionsValidator(["Mica", "Acrylic", "Off"]), restart=True)
     language = OptionsConfigItem(
         "MainWindow", "Language", Language.AUTO, OptionsValidator(Language), LanguageSerializer(), restart=True)
 
