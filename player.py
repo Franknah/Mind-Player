@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QApplication,QWidget,QFrame,
                                QFileDialog,QVBoxLayout,QLabel)
 # from PySide6.QtMultimedia import QMediaFormat
 from resource.ui.Ui_player import Ui_Form
+from qframelesswindow import WindowEffect
 from qfluentwidgets import (isDarkTheme,setTheme,RoundMenu,InfoBar,
                             InfoBarPosition,Theme,FluentIcon as FiF,
                             FlyoutViewBase,Flyout,FlyoutAnimationType,
@@ -61,8 +62,10 @@ class MyAudioPlayer(QWidget):
         self.ui=Ui_Form()
         self.ui.setupUi(self)
         self.player = QMediaPlayer()
+        self.playMode=PlayMode.order
         self.ui.horizontalSlider.setValue(0)
-        self.ui.label_lyric.setWordWrap(True)
+        self.audioOutput = QAudioOutput() # 不能实例化为临时变量，否则被自动回收导致无法播放
+        self.player.setAudioOutput(self.audioOutput)
         self.block=QSignalBlocker(self.player)
         self.block.unblock()
         self.menu=RoundMenu(parent=self)
@@ -92,8 +95,6 @@ class MyAudioPlayer(QWidget):
         # self.player.setSource(QUrl.fromLocalFile(self.fp)) 
         if self.lyricPath!="" :
             self.lyric_dict=self.parse_lyrics_file(self.lyricPath)
-        self.audioOutput = QAudioOutput() # 不能实例化为临时变量，否则被自动回收导致无法播放
-        self.player.setAudioOutput(self.audioOutput)
         
         # self.player.errorOccurred.connect(self._player_error)
         # Qt6中`QMediaPlayer.setVolume`已被移除，使用`QAudioOutput.setVolume`替代
@@ -124,7 +125,7 @@ class MyAudioPlayer(QWidget):
         self.action2.setIcon(QIcon(f"resource\\icon\\random-{color}.svg"))
         self.action3.setIcon(QIcon(f"resource\\icon\\repeat-{color}.svg"))
         self.action4.setIcon(QIcon(f"resource\\icon\\single repeat-{color}.svg"))
-
+        self.switchMode(self.playMode)
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'
         self.action1 = Action(QIcon(f"resource\\icon\\play in order-{color}.svg"),"顺序播放",self,
@@ -143,7 +144,6 @@ class MyAudioPlayer(QWidget):
                         ]
         self.menu.addActions(self.actions)
         self.ui.toolButton_2.setMenu(self.menu)
-
     def __onThemeChanged(self, theme: Theme):
         """ theme changed slot """
         # change the theme of qfluentwidgets
@@ -295,6 +295,8 @@ class CustomFlyoutView(FlyoutViewBase):
         super().__init__(parent)
         self.vBoxLayout = QVBoxLayout(self)
         self.slider=parent.volumnSlider
+        self.slider.setValue(parent.audioOutput.volume()*100)
+        self.slider.setMaximum(100)
         self.label=QLabel(self)
         self.label.setAlignment(Qt.AlignCenter)
         self.slider.valueChanged.connect(self.changeVolumn)

@@ -59,11 +59,12 @@ class SettingInterface(ScrollArea):
             ],
             parent=self.personalGroup
         )
-        self.micaCard=SwitchSettingCard(
-            FIF.APPLICATION,
-            self.tr('云母效果'),
-            self.tr("在 Mind Player 启用云母效果"),
-            cfg.mica,
+        self.effctCard=ComboBoxSettingCard(
+            cfg.effect,
+            FIF.TRANSPARENT,
+            self.tr('窗口效果'),
+            self.tr("在 Mind Player 启用窗口效果"),
+            ["云母效果 ","亚克力效果","无        "],
             parent=self.personalGroup
         )
 
@@ -162,7 +163,7 @@ class SettingInterface(ScrollArea):
 
         
         self.personalGroup.addSettingCard(self.themeCard)
-        self.personalGroup.addSettingCard(self.micaCard)
+        self.personalGroup.addSettingCard(self.effctCard)
  
         self.personalGroup.addSettingCard(self.languageCard)
 

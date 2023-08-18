@@ -3,7 +3,7 @@ from qframelesswindow import WindowEffect
 from qfluentwidgets import (
                             NavigationItemPosition,FluentIcon as FIF,isDarkTheme,
                             FluentTranslator,Theme,setTheme,SplashScreen,InfoBar,
-                            FluentWindow,SystemTrayMenu,Action)
+                            FluentWindow,SystemTrayMenu,Action,toggleTheme)
 from PySide6.QtWidgets import QApplication,QTableWidgetItem,QSystemTrayIcon,QMenu
 from player   import MyAudioPlayer,PlayMode
 from list import PlayList
@@ -21,38 +21,54 @@ class Main(FluentWindow):
     
 
         self.setMinimumSize(800,600)
-        self.navigationInterface.setWindowOpacity(0.7)
         self.initWindow()
-        self.wscreen=SplashScreen(self.windowIcon(),self,True)
-        self.wscreen.setIconSize(QSize(102,102))
-        self.show()
-        self.createSubInterface()
+        self.setSplashScreen()
         self.index = 0
-        # self.setQss()
+        self.setQss()
         cfg.themeChanged.connect(self.__onThemeChanged)
         self.musicInterface = MyAudioPlayer()
         self.ListInterface = PlayList()
         self.settingInterface = SettingInterface()
-        cfg.micaChanged.connect(self.__onMicaChanged)
+        self.shareSignal()
+        self.initNavigation()
+        self.wscreen.finish()
+
+    def setSplashScreen(self):
+        self.wscreen=SplashScreen(self.windowIcon(),self,True)
+        self.wscreen.setIconSize(QSize(102,102))
+        self.show()
+        self.createSubInterface()
+
+    def createSubInterface(self):
+        loop = QEventLoop(self)
+        QTimer.singleShot(2000, loop.quit)
+        loop.exec()
+    def shareSignal(self):
         self.stackedWidget.currentChanged.connect(self.scollToItem)
         self.ListInterface.ui.tableWidget.itemDoubleClicked.connect(self.switchSong)
         self.ListInterface.ui.pushButton.clicked.connect(self.ListInterface.initWindow)
         self.musicInterface.ui.pushButtonNext.released.connect(lambda:self.nextSong(1))
         self.musicInterface.ui.pushButtonPast.released.connect(lambda:self.nextSong(-1))
         self.musicInterface.player.playbackStateChanged.connect(lambda:self.nextSong(1,True))
-        self.initNavigation()
-        self.wscreen.finish()
   
         # add items to navigation interface
-    def createSubInterface(self):
-        loop = QEventLoop(self)
-        QTimer.singleShot(3000, loop.quit)
-        loop.exec()
 
 
     def setQss(self):
-        self.setTheme(cfg.theme.value)
-        self.setMicaEffectEnabled(cfg.mica.value)
+        setTheme(cfg.theme)
+        self.windowEffect.removeBackgroundEffect(self.winId())
+        if cfg.effect.value == "Mica" :
+            self.setMicaEffectEnabled(True)
+            self.windowEffect.setMicaEffect(self.winId(),isDarkTheme())
+        elif cfg.effect.value == "Acrylic" :
+            if isDarkTheme():
+                self.windowEffect.setAcrylicEffect(self.winId(),"F2F2F299")
+            else:
+                self.windowEffect.setAcrylicEffect(self.winId())
+        self.setBackgroundColor(self._normalBackgroundColor())
+            # self.windowEffect.removeBackgroundEffect(self.winId())
+    
+        # self.setStyleSheet(f"background-color: {cfg.theme.value}")
         # color = 'dark' if isDarkTheme() else 'light'
         #  with open(f'resource\qss\{color}\window.qss', encoding='utf-8') as f:
         #     self.setStyleSheet(f.read())
@@ -63,12 +79,12 @@ class Main(FluentWindow):
         """ theme changed slot """
         # change the theme of qfluentwidgets
         # self.setMicaEffectEnabled(False)
-        self.windowEffect.setMicaEffect(self.winId(),isDarkTheme())
+        if self.isMicaEffectEnabled():
+            self.windowEffect.setMicaEffect(self.winId(),isDarkTheme())
         setTheme(theme)
+        
         # self.setQss()
-    def __onMicaChanged(self, mica: bool):
-        """ mica changed slot """
-        self.setMicaEffectEnabled(mica)
+
 
     def scollToItem(self):
         if self.stackedWidget.currentIndex()==1:
@@ -145,7 +161,7 @@ class tray(QSystemTrayIcon):
         super().__init__()
         self.window=window
         self.setIcon(QIcon(r"resource/icon/player.ico"))
-        self.setToolTip(self.window.windowTitle())
+        self.setToolTip(self.window.windowTitle()+"-"+self.window.musicInterface.ui.label_lyric.text())
 
         self.menu=SystemTrayMenu(self.window)
         self.setContextMenu(self.menu)

@@ -35,7 +35,7 @@ class Ui_Form(object):
         self.label_lyric.setFrameShape(QFrame.NoFrame)
         self.label_lyric.setFrameShadow(QFrame.Plain)
         self.label_lyric.setAlignment(Qt.AlignCenter)
-
+        self.label_lyric.setWordWrap(True)
         self.verticalLayout.addWidget(self.label_lyric)
 
         self.gridLayout_3 = QGridLayout()
