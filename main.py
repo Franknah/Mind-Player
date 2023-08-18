@@ -47,8 +47,8 @@ class Main(FluentWindow):
         self.stackedWidget.currentChanged.connect(self.scollToItem)
         self.ListInterface.ui.tableWidget.itemDoubleClicked.connect(self.switchSong)
         self.ListInterface.ui.pushButton.clicked.connect(self.ListInterface.initWindow)
-        self.musicInterface.ui.pushButtonNext.released.connect(lambda:self.nextSong(1))
-        self.musicInterface.ui.pushButtonPast.released.connect(lambda:self.nextSong(-1))
+        self.musicInterface.pushButtonNext.released.connect(lambda:self.nextSong(1))
+        self.musicInterface.pushButtonPast.released.connect(lambda:self.nextSong(-1))
         self.musicInterface.player.playbackStateChanged.connect(lambda:self.nextSong(1,True))
   
         # add items to navigation interface
@@ -161,12 +161,13 @@ class tray(QSystemTrayIcon):
         super().__init__()
         self.window=window
         self.setIcon(QIcon(r"resource/icon/player.ico"))
-        self.setToolTip(self.window.windowTitle()+"-"+self.window.musicInterface.ui.label_lyric.text())
+        self.setToolTip(self.window.windowTitle()+"-"+self.window.musicInterface.label_lyric.text())
 
         self.menu=SystemTrayMenu(self.window)
         self.setContextMenu(self.menu)
         self.action=[
             Action("⏸️    暂停",triggered=w.musicInterface.player.pause),
+            Action("▶️       播放",triggered=w.musicInterface.player.play),
             Action("        退出",triggered=exit)
                      ]
         self.menu.addActions(self.action)

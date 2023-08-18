@@ -50,7 +50,7 @@ class LyricDict(dict):
 
 
 
-class MyAudioPlayer(QWidget):
+class MyAudioPlayer(QWidget,Ui_Form):
     '''播放页'''
     
     def __init__(self):
@@ -59,11 +59,10 @@ class MyAudioPlayer(QWidget):
         # self.lyricPath=r"resource\たぶん-YOASOBI.lrc"
         self.fp,self.lyricPath,self.isplay="","",True
         self.setObjectName("Player")
-        self.ui=Ui_Form()
-        self.ui.setupUi(self)
+        self.setupUi(self)
         self.player = QMediaPlayer()
         self.playMode=PlayMode.order
-        self.ui.horizontalSlider.setValue(0)
+        self.horizontalSlider.setValue(0)
         self.audioOutput = QAudioOutput() # 不能实例化为临时变量，否则被自动回收导致无法播放
         self.player.setAudioOutput(self.audioOutput)
         self.block=QSignalBlocker(self.player)
@@ -72,7 +71,7 @@ class MyAudioPlayer(QWidget):
         self.createMenu()
         self.setQss()
 
-        self.ui.toolButton_3.setIcon(FiF.MEGAPHONE)
+        self.toolButton_3.setIcon(FiF.MEGAPHONE)
         self.volumnSlider=Slider(Qt.Orientation.Horizontal)
         self.volumnSlider.setRange(0,100)
         self.volumnSlider.setValue(100)
@@ -82,14 +81,14 @@ class MyAudioPlayer(QWidget):
 
     def shareSignal(self):
         cfg.themeChanged.connect(self.__onThemeChanged)
-        self.ui.pushButton.clicked.connect(self.StateInit)
+        self.pushButton.clicked.connect(self.StateInit)
         self.player.positionChanged.connect(self.positionChanged)
         self.player.durationChanged.connect(self.durationChanged)
         # self.player.playbackStateChanged.connect(self.stateChanged)
-        self.ui.horizontalSlider.sliderMoved.connect(self.dragSlider)
-        self.ui.horizontalSlider.sliderReleased.connect(self.releaseSlider)
-        self.ui.toolButton.clicked.connect(self.changeLyric)
-        self.ui.toolButton_3.clicked.connect(lambda: Flyout.make(CustomFlyoutView(self),self.ui.toolButton_3,self,FlyoutAnimationType.PULL_UP))
+        self.horizontalSlider.sliderMoved.connect(self.dragSlider)
+        self.horizontalSlider.sliderReleased.connect(self.releaseSlider)
+        self.toolButton.clicked.connect(self.changeLyric)
+        self.toolButton_3.clicked.connect(lambda: Flyout.make(CustomFlyoutView(self),self.toolButton_3,self,FlyoutAnimationType.PULL_UP))
 
     def initWindow(self):
         # self.player.setSource(QUrl.fromLocalFile(self.fp)) 
@@ -115,7 +114,7 @@ class MyAudioPlayer(QWidget):
                 break
             else:
                 lyricPath = lyric_dict[timestamp]
-            self.ui.label_lyric.setText(lyricPath)
+            self.label_lyric.setText(lyricPath)
 
     def setQss(self):
         color = 'dark' if isDarkTheme() else 'light'
@@ -143,7 +142,7 @@ class MyAudioPlayer(QWidget):
             self.action4
                         ]
         self.menu.addActions(self.actions)
-        self.ui.toolButton_2.setMenu(self.menu)
+        self.toolButton_2.setMenu(self.menu)
     def __onThemeChanged(self, theme: Theme):
         """ theme changed slot """
         # change the theme of qfluentwidgets
@@ -162,7 +161,7 @@ class MyAudioPlayer(QWidget):
             self.player.setSource(QUrl.fromLocalFile(self.fp))      
             self.initWindow()
             self.lyricManage()
-            self.ui.labelTitle.setText(info[0]+"-"+info[1]) 
+            self.labelTitle.setText(info[0]+"-"+info[1]) 
             self.setPlayState(QMediaPlayer.PlaybackState.PlayingState)
         except FileNotFoundError:
             InfoBar.error("错误",f"找不到文件{file}",parent=self)
@@ -171,11 +170,11 @@ class MyAudioPlayer(QWidget):
             InfoBar.error("权限错误","没有足够的权限",parent=self)
     def lyricManage(self):
         if self.fp in cfg.lyricFolders.value:
-            self.ui.label_lyric.setText("")
+            self.label_lyric.setText("")
             self.lyricPath=os.path.normpath(cfg.lyricFolders.value[self.fp])
             self.lyric_dict=self.parse_lyrics_file(self.lyricPath)
         else:
-            self.ui.label_lyric.setText("暂无歌词")
+            self.label_lyric.setText("暂无歌词")
             self.lyricPath=""
             self.lyric_dict={}
 
@@ -183,15 +182,15 @@ class MyAudioPlayer(QWidget):
     def switchMode(self,mode:PlayMode):
         '''切换播放模式'''
         self.playMode=mode
-        self.ui.toolButton_2.setIcon(self.actions[mode.value].icon())
+        self.toolButton_2.setIcon(self.actions[mode.value].icon())
         if mode == PlayMode.order:
-            self.ui.toolButton_2.setToolTip("顺序播放")
+            self.toolButton_2.setToolTip("顺序播放")
         elif mode == PlayMode.random:
-            self.ui.toolButton_2.setToolTip("随机播放")
+            self.toolButton_2.setToolTip("随机播放")
         elif mode == PlayMode.repeat:
-            self.ui.toolButton_2.setToolTip("列表循环")
+            self.toolButton_2.setToolTip("列表循环")
         elif mode == PlayMode.single:
-            self.ui.toolButton_2.setToolTip("单曲循环")
+            self.toolButton_2.setToolTip("单曲循环")
 
 
 
@@ -200,69 +199,69 @@ class MyAudioPlayer(QWidget):
     def StateInit(self):
         if self.fp=="":
             InfoBar.error("错误","没有添加媒体",position=InfoBarPosition.TOP,parent=self)
-        if self.ui.pushButton.isChecked():
-            self.ui.pushButton.setIcon(r"resource\icon\play.ico")
-            self.ui.pushButton.setText("暂停")
+        if self.pushButton.isChecked():
+            self.pushButton.setIcon(r"resource\icon\play.ico")
+            self.pushButton.setText("暂停")
             self.player.play()
             self.isplay=True
         else:
-            self.ui.pushButton.setIcon(r"resource\icon\pause.ico") 
-            self.ui.pushButton.setText("播放")
+            self.pushButton.setIcon(r"resource\icon\pause.ico") 
+            self.pushButton.setText("播放")
             self.player.pause()
             self.isplay=True
 
     def setPlayState(self,state:QMediaPlayer.PlaybackState):
         if state== self.player.PlaybackState.StoppedState:
-            self.ui.pushButton.setChecked(False)
-            self.ui.pushButton.setIcon(r"resource\icon\stop.ico")    
-            self.ui.pushButton.setText("播放")
+            self.pushButton.setChecked(False)
+            self.pushButton.setIcon(r"resource\icon\stop.ico")    
+            self.pushButton.setText("播放")
         elif state==self.player.PlaybackState.PlayingState:  
-            self.ui.pushButton.setChecked(True)
-            self.ui.pushButton.setIcon(r"resource\icon\play.ico")
-            self.ui.pushButton.setText("暂停")
+            self.pushButton.setChecked(True)
+            self.pushButton.setIcon(r"resource\icon\play.ico")
+            self.pushButton.setText("暂停")
         elif state == self.player.PlaybackState.PausedState:
-            self.ui.pushButton.setChecked(False)
-            self.ui.pushButton.setIcon(r"resource\icon\pause.ico")   
-            self.ui.pushButton.setText("播放")    
+            self.pushButton.setChecked(False)
+            self.pushButton.setIcon(r"resource\icon\pause.ico")   
+            self.pushButton.setText("播放")    
         self.StateInit()
     
     @Slot()
     def positionChanged(self, position):
         self.updateTime(position)
-        max = self.ui.horizontalSlider.maximum()
+        max = self.horizontalSlider.maximum()
         if self.player.duration()!=0:
             value=position/self.player.duration()*max
-            self.ui.horizontalSlider.setValue(value)
-            if self.ui.horizontalSlider.value()==max:
+            self.horizontalSlider.setValue(value)
+            if self.horizontalSlider.value()==max:
                 self.isplay=False
         if self.lyricPath != "":
             self.show_lyric(position,self.lyric_dict)
         else:
-            self.ui.label_lyric.setText("暂无歌词")
+            self.label_lyric.setText("暂无歌词")
 
     def updateTime(self,position:int):
         second = floor((position / 1000) % 60)
         minute = floor((position / (1000 * 60)) % 60)
-        self.ui.label.setText(f"{minute:02d} :{second:02d}")
+        self.label.setText(f"{minute:02d} :{second:02d}")
 
     @Slot()
     def durationChanged(self, duration):
             second = int((duration / 1000) % 60)
             minute = int((duration / (1000 * 60)) % 60)
-            self.ui.horizontalSlider.setMaximum(int(duration/1000)*2)
+            self.horizontalSlider.setMaximum(int(duration/1000)*2)
 
-            self.ui.label_2.setText(f"{minute:02d} :{second:02d}")
+            self.label_2.setText(f"{minute:02d} :{second:02d}")
 
         
     @Slot()
     def dragSlider(self):
-        self.ui.label_lyric.setText("")
+        self.label_lyric.setText("")
         self.setToolTip("")
         self.player.pause()
         if self.fp=="":
             return
         self.block.reblock()
-        slider = self.ui.horizontalSlider
+        slider = self.horizontalSlider
         sc=floor(slider.value()/slider.maximum()*self.player.duration())
         self.player.setPosition(sc)
         self.updateTime(self.player.position())       
