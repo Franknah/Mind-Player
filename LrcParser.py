@@ -7,7 +7,7 @@ class LyricDict():
         self.dict = self.parseLrc()
 
     def parseLrc(self):
-        '''parse the lyric'''
+        ''' parse the lyric '''
         if self.path == "":
             return {0: "暂无歌词"}
         dict = {}

@@ -52,11 +52,11 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.block.unblock()
         self.menu = RoundMenu(parent=self)
         self.createMenu()
-        self.setQss()
-
         self.volumnSlider = Slider(Qt.Orientation.Horizontal)
         self.volumnSlider.setRange(0, 100)
         self.volumnSlider.setValue(100)
+        self.setQss()
+
         self.switchMode(PlayMode.order)
         self.shareSignal()
         self.initWindow()
@@ -96,7 +96,10 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.action4.setIcon(
             QIcon(f"resource\\icon\\single repeat-{color}.svg"))
         self.switchMode(self.playMode)
-        self.toolButton_3.setIcon(QIcon(f"resource\\icon\\sound-{color}.svg"))
+        if self.volumnSlider.value() == 0:
+            self.toolButton_3.setIcon(QIcon(f"resource\\icon\\sound empty-{color}.svg"))
+        else:
+            self.toolButton_3.setIcon(QIcon(f"resource\\icon\\sound-{color}.svg"))
 
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'
@@ -275,9 +278,10 @@ class CustomFlyoutView(FlyoutViewBase):
         self.vBoxLayout.addWidget(self.slider)
 
     def changeVolumn(self):
-        self.parent().parent().audioOutput.setVolume(self.slider.value()/100)
+        value = self.slider.value()
+        self.parent().parent().audioOutput.setVolume(value/100)
         self.label.setText("当前音量："+str(self.slider.value()))
-
+        self.parent().parent().setQss()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
