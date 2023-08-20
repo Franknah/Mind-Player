@@ -31,6 +31,8 @@ class Main(FluentWindow):
         self.shareSignal()
         self.initNavigation()
         self.wscreen.finish()
+        self.tray=tray(self)
+        self.tray.show()
 
     def setSplashScreen(self):
         self.wscreen = SplashScreen(self.windowIcon(), self, True)
@@ -39,6 +41,7 @@ class Main(FluentWindow):
         self.createSubInterface()
 
     def createSubInterface(self):
+        # Craat a splash screen
         loop = QEventLoop(self)
         QTimer.singleShot(2000, loop.quit)
         loop.exec()
@@ -80,7 +83,7 @@ class Main(FluentWindow):
         # self.setQss()
 
     def scollToItem(self):
-        '''转到播放列表页上次选择的一项'''
+        ''' Scoll to the latest item '''
         if self.stackedWidget.currentIndex() == self.stackedWidget.indexOf(self.ListInterface):
             tabel = self.ListInterface.tableWidget
             tabel.scrollToItem(tabel.currentItem())
@@ -105,13 +108,15 @@ class Main(FluentWindow):
         songPath = self.ListInterface.songPosition
         songinfo = self.ListInterface.songInfos
         self.index = item.row()
-        # 向播放页传入参数
+        # turn to the musicInterface
         self.musicInterface.switchSong(
             songPath[self.index], songinfo[self.index], self.index)
         self.switchTo(self.musicInterface)
+        # add title to the tooltip of tray
+        self.tray.setToolTip(self.windowTitle() + " - " + songinfo[self.index][0])
 
     def nextSong(self, distance: int, isAuto: bool = False):
-        # isAuto用来检验是否是程序自动发出或用户操作
+        # "isAuto" is for recongize whether the function is actived by the button or a stop signal
         if self.musicInterface.fp == "":
             return
         if isAuto and self.musicInterface.isplay:
@@ -147,9 +152,7 @@ class Main(FluentWindow):
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
             self.index -= distance
 
-    # def onCurrentInterfaceChanged(self, index):
-    #     widget = self.stackedWidget.widget(index)
-    #     self.navigationInterface.setCurrentItem(widget.objectName())
+
 
     def closeEvent(self, event) -> None:
         event.ignore()
@@ -161,15 +164,17 @@ class tray(QSystemTrayIcon):
         super().__init__()
         self.window = window
         self.setIcon(self.window.windowIcon())
-        self.setToolTip(self.window.windowTitle()+"-" +
-                        self.window.musicInterface.label_lyric.text())
+        self.setToolTip(self.window.windowTitle())
 
         self.menu = SystemTrayMenu(self.window)
         self.setContextMenu(self.menu)
         self.action = [
-            Action("⏸️    暂停", triggered=w.musicInterface.player.pause),
-            Action("▶️       播放", triggered=w.musicInterface.player.play),
-            Action("        退出", triggered=exit)
+            Action("⏸️    暂停", 
+                   triggered=self.window.musicInterface.player.pause),
+            Action("▶️       播放", 
+                   triggered=self.window.musicInterface.player.play),
+            Action("        退出", 
+                   triggered=exit)
         ]
         self.menu.addActions(self.action)
         self.activated.connect(self.on_tray_activated)
@@ -178,8 +183,6 @@ class tray(QSystemTrayIcon):
         if reason == QSystemTrayIcon.DoubleClick:
             if self.window.isHidden():
                 self.window.show()
-                # self.window.createSubInterface()
-                # QTimer.singleShot(10000,self.window.wscreen.finish)
             elif self.window.isMinimized():
                 self.window.showNormal()
 
@@ -200,7 +203,5 @@ if __name__ == '__main__':
 
     # create main window
     w = Main()
-    tray = tray(w)
-    tray.show()
     w.show()
     app.exec()
