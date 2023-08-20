@@ -31,7 +31,7 @@ class Main(FluentWindow):
         self.shareSignal()
         self.initNavigation()
         self.wscreen.finish()
-        self.tray=tray(self)
+        self.tray = tray(self)
         self.tray.show()
 
     def setSplashScreen(self):
@@ -113,7 +113,8 @@ class Main(FluentWindow):
             songPath[self.index], songinfo[self.index], self.index)
         self.switchTo(self.musicInterface)
         # add title to the tooltip of tray
-        self.tray.setToolTip(self.windowTitle() + " - " + songinfo[self.index][0])
+        self.tray.setToolTip(self.windowTitle() + " - " +
+                             songinfo[self.index][0])
 
     def nextSong(self, distance: int, isAuto: bool = False):
         # "isAuto" is for recongize whether the function is actived by the button or a stop signal
@@ -152,8 +153,6 @@ class Main(FluentWindow):
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
             self.index -= distance
 
-
-
     def closeEvent(self, event) -> None:
         event.ignore()
         self.hide()
@@ -169,11 +168,11 @@ class tray(QSystemTrayIcon):
         self.menu = SystemTrayMenu(self.window)
         self.setContextMenu(self.menu)
         self.action = [
-            Action("⏸️    暂停", 
+            Action("⏸️    暂停",
                    triggered=self.window.musicInterface.player.pause),
-            Action("▶️       播放", 
+            Action("▶️       播放",
                    triggered=self.window.musicInterface.player.play),
-            Action("        退出", 
+            Action("        退出",
                    triggered=exit)
         ]
         self.menu.addActions(self.action)
