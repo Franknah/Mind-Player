@@ -54,7 +54,6 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.createMenu()
         self.setQss()
 
-        self.toolButton_3.setIcon(FiF.MEGAPHONE)
         self.volumnSlider = Slider(Qt.Orientation.Horizontal)
         self.volumnSlider.setRange(0, 100)
         self.volumnSlider.setValue(100)
@@ -94,9 +93,9 @@ class MyAudioPlayer(QWidget, Ui_Form):
             QIcon(f"resource\\icon\\play in order-{color}.svg"))
         self.action2.setIcon(QIcon(f"resource\\icon\\random-{color}.svg"))
         self.action3.setIcon(QIcon(f"resource\\icon\\repeat-{color}.svg"))
-        self.action4.setIcon(
-            QIcon(f"resource\\icon\\single repeat-{color}.svg"))
+        self.action4.setIcon(QIcon(f"resource\\icon\\single repeat-{color}.svg"))
         self.switchMode(self.playMode)
+        self.toolButton_3.setIcon(QIcon(f"resource\\icon\\sound-{color}.svg"))
 
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'

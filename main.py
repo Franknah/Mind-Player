@@ -19,7 +19,7 @@ class Main(FluentWindow):
     def __init__(self):
         super().__init__()
 
-        # self.setMinimumSize(800, 600)
+        self.resize(800,600)
         self.initWindow()
         self.setSplashScreen()
         self.index = 0
@@ -81,9 +81,10 @@ class Main(FluentWindow):
 
     def scollToItem(self):
         '''转到播放列表页上次选择的一项'''
-        if self.stackedWidget.currentIndex() == 1:
+        if self.stackedWidget.currentIndex() == self.stackedWidget.indexOf(self.ListInterface):
             tabel = self.ListInterface.tableWidget
             tabel.scrollToItem(tabel.currentItem())
+
 
     def initNavigation(self):
         # self.addSubInterface(self.searchInterface, FluentIcon.SEARCH, 'Search')
@@ -131,7 +132,8 @@ class Main(FluentWindow):
             self.index = new
 
         elif playmode == PlayMode.single:
-            pass
+            if not isAuto:
+                self.index += distance
 
         elif playmode == PlayMode.repeat:
             self.index += distance
@@ -146,9 +148,9 @@ class Main(FluentWindow):
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
             self.index -= distance
 
-    def onCurrentInterfaceChanged(self, index):
-        widget = self.stackWidget.widget(index)
-        self.navigationInterface.setCurrentItem(widget.objectName())
+    # def onCurrentInterfaceChanged(self, index):
+    #     widget = self.stackedWidget.widget(index)
+    #     self.navigationInterface.setCurrentItem(widget.objectName())
 
     def closeEvent(self, event) -> None:
         event.ignore()
