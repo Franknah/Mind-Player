@@ -97,9 +97,11 @@ class MyAudioPlayer(QWidget, Ui_Form):
             QIcon(f"resource\\icon\\single repeat-{color}.svg"))
         self.switchMode(self.playMode)
         if self.volumnSlider.value() == 0:
-            self.toolButton_3.setIcon(QIcon(f"resource\\icon\\sound empty-{color}.svg"))
+            self.toolButton_3.setIcon(
+                QIcon(f"resource\\icon\\sound empty-{color}.svg"))
         else:
-            self.toolButton_3.setIcon(QIcon(f"resource\\icon\\sound-{color}.svg"))
+            self.toolButton_3.setIcon(
+                QIcon(f"resource\\icon\\sound-{color}.svg"))
 
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'
@@ -282,6 +284,7 @@ class CustomFlyoutView(FlyoutViewBase):
         self.parent().parent().audioOutput.setVolume(value/100)
         self.label.setText("当前音量："+str(self.slider.value()))
         self.parent().parent().setQss()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
