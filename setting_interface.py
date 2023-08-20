@@ -2,7 +2,7 @@
 from config import cfg, HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, FolderListSettingCard,
                             OptionsSettingCard, RangeSettingCard, PushSettingCard,
-                            ColorSettingCard, HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
+                            ColorSettingCard, HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
                             ComboBoxSettingCard, ExpandLayout, Theme, InfoBar, CustomColorSettingCard,
                             setTheme, setThemeColor, isDarkTheme, FluentTranslator)
 from qfluentwidgets import FluentIcon as FIF
@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QWidget, QLabel, QFontDialog, QFileDialog, QHBoxLa
 import sys
 
 
-class SettingInterface(ScrollArea):
+class SettingInterface(SmoothScrollArea):
     """ Setting interface """
 
     checkUpdateSig = Signal()
