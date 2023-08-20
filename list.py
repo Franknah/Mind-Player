@@ -13,7 +13,7 @@ from mutagen.mp3 import MP3
 from mutagen import id3
 
 
-class PlayList(QWidget,Ui_Form):
+class PlayList(QWidget, Ui_Form):
 
     def __init__(self):
         super().__init__()

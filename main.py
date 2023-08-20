@@ -19,7 +19,7 @@ class Main(FluentWindow):
     def __init__(self):
         super().__init__()
 
-        self.resize(800,600)
+        self.resize(800, 600)
         self.initWindow()
         self.setSplashScreen()
         self.index = 0
@@ -84,7 +84,6 @@ class Main(FluentWindow):
         if self.stackedWidget.currentIndex() == self.stackedWidget.indexOf(self.ListInterface):
             tabel = self.ListInterface.tableWidget
             tabel.scrollToItem(tabel.currentItem())
-
 
     def initNavigation(self):
         # self.addSubInterface(self.searchInterface, FluentIcon.SEARCH, 'Search')

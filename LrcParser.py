@@ -33,14 +33,15 @@ class LyricDict():
             if int(time) <= timestamp:
                 continue
             else:
-                index=list(self.dict.keys()).index(time)-1
-                if index<0:return ""
+                index = list(self.dict.keys()).index(time)-1
+                if index < 0:
+                    return ""
                 lyric = list(self.dict.values())[index]
                 return lyric
 
     def updatePath(self, newPath: str):
         self.path = newPath
-        self.dict=self.parseLrc()
+        self.dict = self.parseLrc()
 
 
 if __name__ == "__main__":
