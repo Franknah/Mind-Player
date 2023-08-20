@@ -29,19 +29,20 @@ class LyricDict():
 
     def getLyric(self, timestamp: float):
         '''return the lryic in ms'''
-        if len(self.dict) == 0:
-            return "暂无歌词"
         for time in list(self.dict.keys()):
-            if time < timestamp:
+            if int(time) <= timestamp:
                 continue
             else:
-                return self.dict[time]
+                index=list(self.dict.keys()).index(time)-1
+                if index<0:return ""
+                lyric = list(self.dict.values())[index]
+                return lyric
+
     def updatePath(self, newPath: str):
         self.path = newPath
-        self.parseLrc()
-
+        self.dict=self.parseLrc()
 
 
 if __name__ == "__main__":
     parser = LyricDict("resource\たぶん-YOASOBI.lrc")
-    print(parser.getLyric(60000))
+    print(parser.getLyric(40000))

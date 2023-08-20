@@ -13,15 +13,14 @@ from mutagen.mp3 import MP3
 from mutagen import id3
 
 
-class PlayList(QWidget):
+class PlayList(QWidget,Ui_Form):
 
     def __init__(self):
         super().__init__()
-        self.ui = Ui_Form()
-        self.ui.setupUi(self)
+        self.setupUi(self)
         self.setObjectName("List")
-        self.ui.pushButton.setIcon(FluentIcon.UPDATE)
-        self.ui.pushButton.clicked.connect(self.initWindow)
+        self.pushButton.setIcon(FluentIcon.UPDATE)
+        self.pushButton.clicked.connect(self.initWindow)
 
         self.initWindow()
 
@@ -33,20 +32,20 @@ class PlayList(QWidget):
                 cfg.musicFolders.value)
         except PermissionError:
             InfoBar.error("权限错误", "没有足够的权限", parent=self)
-        self.ui.tableWidget.setEditTriggers(
+        self.tableWidget.setEditTriggers(
             QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.ui.tableWidget.setWordWrap(False)
-        self.ui.tableWidget.setRowCount(len(self.songInfos))
-        self.ui.tableWidget.setColumnCount(4)
+        self.tableWidget.setWordWrap(False)
+        self.tableWidget.setRowCount(len(self.songInfos))
+        self.tableWidget.setColumnCount(4)
 
         for i, songInfo in enumerate(self.songInfos):
             for j in range(4):
-                self.ui.tableWidget.setItem(
+                self.tableWidget.setItem(
                     i, j, QTableWidgetItem(songInfo[j]))
-        self.ui.tableWidget.verticalHeader().hide()
-        self.ui.tableWidget.setHorizontalHeaderLabels(
+        self.tableWidget.verticalHeader().hide()
+        self.tableWidget.setHorizontalHeaderLabels(
             ['标题', '艺术家', '专辑', '时长'])
-        self.ui.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeColumnsToContents()
         self.setQss()
 
     def setQss(self):

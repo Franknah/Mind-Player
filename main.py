@@ -1,4 +1,3 @@
-import os
 import sys
 import random
 from qframelesswindow import WindowEffect
@@ -20,7 +19,7 @@ class Main(FluentWindow):
     def __init__(self):
         super().__init__()
 
-        self.setMinimumSize(800, 600)
+        # self.setMinimumSize(800, 600)
         self.initWindow()
         self.setSplashScreen()
         self.index = 0
@@ -46,9 +45,9 @@ class Main(FluentWindow):
 
     def shareSignal(self):
         self.stackedWidget.currentChanged.connect(self.scollToItem)
-        self.ListInterface.ui.tableWidget.itemDoubleClicked.connect(
+        self.ListInterface.tableWidget.itemDoubleClicked.connect(
             self.switchSong)
-        self.ListInterface.ui.pushButton.clicked.connect(
+        self.ListInterface.pushButton.clicked.connect(
             self.ListInterface.initWindow)
         self.musicInterface.pushButtonNext.released.connect(
             lambda: self.nextSong(1))
@@ -56,8 +55,6 @@ class Main(FluentWindow):
             lambda: self.nextSong(-1))
         self.musicInterface.player.playbackStateChanged.connect(
             lambda: self.nextSong(1, True))
-
-        
 
     def setQss(self):
         setTheme(cfg.theme)
@@ -72,7 +69,6 @@ class Main(FluentWindow):
                 self.windowEffect.setAcrylicEffect(self.winId())
         self.setBackgroundColor(self._normalBackgroundColor())
 
-
     def __onThemeChanged(self, theme: Theme):
         """ theme changed slot """
         # change the theme of qfluentwidgets
@@ -86,7 +82,7 @@ class Main(FluentWindow):
     def scollToItem(self):
         '''转到播放列表页上次选择的一项'''
         if self.stackedWidget.currentIndex() == 1:
-            tabel = self.ListInterface.ui.tableWidget
+            tabel = self.ListInterface.tableWidget
             tabel.scrollToItem(tabel.currentItem())
 
     def initNavigation(self):
@@ -122,29 +118,34 @@ class Main(FluentWindow):
             return
         songPath = self.ListInterface.songPosition
         songinfo = self.ListInterface.songInfos
-        if self.musicInterface.playMode == PlayMode.order:
+        playmode = self.musicInterface.playMode
+        table = self.ListInterface.tableWidget
+
+        if playmode == PlayMode.order:
             self.index += distance
-        elif self.musicInterface.playMode == PlayMode.random:
+
+        elif playmode == PlayMode.random:
             new = random.randint(0, len(songPath)-1)
             while new == self.index:
                 new = random.randint(0, len(songPath)-1)
             self.index = new
-        elif self.musicInterface.playMode == PlayMode.single:
+
+        elif playmode == PlayMode.single:
             pass
-        elif self.musicInterface.playMode == PlayMode.repeat:
+
+        elif playmode == PlayMode.repeat:
             self.index += distance
             if self.index >= len(songPath):
                 self.index = 0
+
         try:
             self.musicInterface.switchSong(
                 songPath[self.index], songinfo[self.index], self.index)
-            self.ListInterface.ui.tableWidget.setCurrentItem(
-                self.ListInterface.ui.tableWidget.item(self.index, 0))
+            table.setCurrentItem(table.item(self.index, 0))
         except IndexError:
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
             self.index -= distance
 
-    
     def onCurrentInterfaceChanged(self, index):
         widget = self.stackWidget.widget(index)
         self.navigationInterface.setCurrentItem(widget.objectName())
