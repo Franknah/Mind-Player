@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QApplication, QTableWidgetItem, QSystemTrayIcon, Q
 from player import MyAudioPlayer, PlayMode
 from list import PlayList
 from config import cfg
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtGui import QIcon
 from setting_interface import SettingInterface
 from PySide6.QtCore import (Qt, QTranslator, Slot, QSize, QTimer, QEventLoop)
 
@@ -57,7 +57,7 @@ class Main(FluentWindow):
         self.musicInterface.player.playbackStateChanged.connect(
             lambda: self.nextSong(1, True))
 
-        # add items to navigation interface
+        
 
     def setQss(self):
         setTheme(cfg.theme)
@@ -144,13 +144,7 @@ class Main(FluentWindow):
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
             self.index -= distance
 
-    # def switchTo(self, widget):
-    #     self.tackWidget.setCurrentWidget(widget)
-    #     if widget==self.ListInterface:
-    #         tabel = self.ListInterface.ui.tableWidget
-    #         tabel.setCurrentItem(tabel.item(self.index,0))
-    #         tabel.scrollToItem(tabel.currentItem())
-
+    
     def onCurrentInterfaceChanged(self, index):
         widget = self.stackWidget.widget(index)
         self.navigationInterface.setCurrentItem(widget.objectName())
@@ -164,7 +158,7 @@ class tray(QSystemTrayIcon):
     def __init__(self, window: Main):
         super().__init__()
         self.window = window
-        self.setIcon(QIcon(r"resource/icon/player.ico"))
+        self.setIcon(self.window.windowIcon())
         self.setToolTip(self.window.windowTitle()+"-" +
                         self.window.musicInterface.label_lyric.text())
 

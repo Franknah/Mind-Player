@@ -14,6 +14,7 @@ from qfluentwidgets import (isDarkTheme,setTheme,RoundMenu,InfoBar,
                             InfoBarPosition,Theme,FluentIcon as FiF,
                             FlyoutViewBase,Flyout,FlyoutAnimationType,
                             Slider,Action,ToolTipFilter)
+from LrcParser import LyricDict
 from config import cfg
 class PlayMode(enum.Enum):
     '''
@@ -27,26 +28,7 @@ class PlayMode(enum.Enum):
     repeat = 2
     single = 3
 
-class LyricDict(dict):
-    def __init__(self,path=str):
-        super().__init__()
-        self.parse(path)
-    def parse(self,lyricPath:str):
-        '''解析歌词'''
-        self.clear()
-        with open(lyricPath, 'r',encoding='UTF-8') as f:
-            lines = f.readlines()
-        for line in lines:
-            match = re.match(r'\[(\d+):(\d+\.\d+)\](.*)', line)
-            if match:
-                minutes = int(match.group(1))
-                seconds = float(match.group(2))
-                timestamp = (minutes * 60 + seconds) * 1000
-                lyrics = match.group(3).strip()
-                if timestamp in self:
-                    self[timestamp]+=f"\n{lyrics}"                
-                    continue
-                self[timestamp] = lyrics
+
 
 
 
@@ -93,28 +75,20 @@ class MyAudioPlayer(QWidget,Ui_Form):
     def initWindow(self):
         # self.player.setSource(QUrl.fromLocalFile(self.fp)) 
         if self.lyricPath!="" :
-            self.lyric_dict=self.parse_lyrics_file(self.lyricPath)
+            self.lyric_dict=LyricDict(self.lyricPath)
         
         # self.player.errorOccurred.connect(self._player_error)
         # Qt6中`QMediaPlayer.setVolume`已被移除，使用`QAudioOutput.setVolume`替代
 
     
-    def parse_lyrics_file(self,filepath):
-        '''解析歌词文件'''
-        if filepath == "":
-            return
-        return LyricDict(filepath)
+
 
        
 
-    def show_lyric(self, position, lyric_dict):
+    def show_lyric(self, position:int):
         # 查找对应的歌词并显示在标签上
-        for timestamp in sorted(lyric_dict.keys()):
-            if position < timestamp:
-                break
-            else:
-                lyricPath = lyric_dict[timestamp]
-            self.label_lyric.setText(lyricPath)
+        text=self.lyric_dict.getLyric(position)
+        self.label_lyric.setText(text)
 
     def setQss(self):
         color = 'dark' if isDarkTheme() else 'light'
@@ -127,13 +101,17 @@ class MyAudioPlayer(QWidget,Ui_Form):
         self.switchMode(self.playMode)
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'
-        self.action1 = Action(QIcon(f"resource\\icon\\play in order-{color}.svg"),"顺序播放",self,
+        self.action1 = Action(QIcon(f"resource\\icon\\play in order-{color}.svg"),
+                              "顺序播放",self,
                               triggered=lambda:self.switchMode(PlayMode.order))
-        self.action2 = Action(QIcon(f"resource\\icon\\random-{color}.svg"),"随机播放",self,
+        self.action2 = Action(QIcon(f"resource\\icon\\random-{color}.svg")
+                              ,"随机播放",self,
                               triggered=lambda:self.switchMode(PlayMode.random))
-        self.action3 = Action(QIcon(f"resource\\icon\\repeat-{color}.svg"),"列表循环",self,
+        self.action3 = Action(QIcon(f"resource\\icon\\repeat-{color}.svg"),
+                              "列表循环",self,
                               triggered=lambda:self.switchMode(PlayMode.repeat))
-        self.action4 = Action(QIcon(f"resource\\icon\\single repeat-{color}.svg"),"单曲循环",self,
+        self.action4 = Action(QIcon(f"resource\\icon\\single repeat-{color}.svg"),
+                              "单曲循环",self,
                               triggered=lambda:self.switchMode(PlayMode.single))
         self.actions=[
             self.action1,
@@ -160,24 +138,22 @@ class MyAudioPlayer(QWidget,Ui_Form):
             self.fp=os.path.normpath(file)
             self.player.setSource(QUrl.fromLocalFile(self.fp))      
             self.initWindow()
-            self.lyricManage()
+            self.lyricSetting()
             self.labelTitle.setText(info[0]+"-"+info[1]) 
             self.setPlayState(QMediaPlayer.PlaybackState.PlayingState)
         except FileNotFoundError:
-            InfoBar.error("错误",f"找不到文件{file}",parent=self)
+            InfoBar.error("错误",f"找不到文件'{file}'",parent=self)
             
         except PermissionError:
             InfoBar.error("权限错误","没有足够的权限",parent=self)
-    def lyricManage(self):
+    def lyricSetting(self):
         if self.fp in cfg.lyricFolders.value:
             self.label_lyric.setText("")
             self.lyricPath=os.path.normpath(cfg.lyricFolders.value[self.fp])
-            self.lyric_dict=self.parse_lyrics_file(self.lyricPath)
         else:
-            self.label_lyric.setText("暂无歌词")
             self.lyricPath=""
-            self.lyric_dict={}
-
+        self.lyric_dict.updatePath(self.lyricPath)
+    
 
     def switchMode(self,mode:PlayMode):
         '''切换播放模式'''
@@ -226,7 +202,7 @@ class MyAudioPlayer(QWidget,Ui_Form):
         self.StateInit()
     
     @Slot()
-    def positionChanged(self, position):
+    def positionChanged(self, position:int):
         self.updateTime(position)
         max = self.horizontalSlider.maximum()
         if self.player.duration()!=0:
@@ -235,7 +211,7 @@ class MyAudioPlayer(QWidget,Ui_Form):
             if self.horizontalSlider.value()==max:
                 self.isplay=False
         if self.lyricPath != "":
-            self.show_lyric(position,self.lyric_dict)
+            self.show_lyric(position)
         else:
             self.label_lyric.setText("暂无歌词")
 
@@ -278,7 +254,7 @@ class MyAudioPlayer(QWidget,Ui_Form):
             if path=="": return
 
             self.lyricPath=os.path.normpath(path)
-            self.lyric_dict=self.parse_lyrics_file(path)
+            self.lyric_dict.updatePath(path)
             dict=cfg.lyricFolders.value.copy()
                                 
             dict[self.fp]=self.lyricPath            
