@@ -78,7 +78,7 @@ class Config(QConfig):
     dpiScale = OptionsConfigItem(
         "MainWindow", "DpiScale", "Auto", OptionsValidator([1, 1.25, 1.5, 1.75, 2, "Auto"]), restart=True)
     effect = OptionsConfigItem(
-        "MainWindow", "Effect", True, OptionsValidator(["Mica", "Acrylic", "Off"]), restart=True)
+        "MainWindow", "Effect", True, BoolValidator())
     language = OptionsConfigItem(
         "MainWindow", "Language", Language.AUTO, OptionsValidator(Language), LanguageSerializer(), restart=True)
 

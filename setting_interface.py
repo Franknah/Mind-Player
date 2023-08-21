@@ -62,12 +62,11 @@ class SettingInterface(SmoothScrollArea):
             ],
             parent=self.personalGroup
         )
-        self.effctCard = ComboBoxSettingCard(
-            cfg.effect,
+        self.effctCard = SwitchSettingCard(
             FIF.TRANSPARENT,
-            self.tr('窗口效果'),
-            self.tr("在 Mind Player 启用窗口效果"),
-            ["云母效果 ", "亚克力效果", "无        "],
+            self.tr('云母效果'),
+            self.tr("在 Mind Player 启用云母效果"),
+            cfg.effect,
             parent=self.personalGroup
         )
 
