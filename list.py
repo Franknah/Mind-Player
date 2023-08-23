@@ -1,16 +1,19 @@
-from PySide6.QtWidgets import (QWidget, QTableWidgetItem,
+import PySide6.QtGui
+from PySide6.QtWidgets import (QWidget, QTableWidgetItem, QTableWidget,
                                QAbstractItemView, QHBoxLayout, QFrame,
-                               QApplication)
-from resource.ui.Ui_list import Ui_Form
-from PySide6.QtCore import Qt, Slot, Signal, QObject
+                               QApplication, QTableView)
+from resource.ui.list_ui import Ui_Form
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QContextMenuEvent, QMouseEvent
 from qfluentwidgets import (isDarkTheme, Theme,
                             setTheme, NavigationItemPosition, FluentIcon,
-                            InfoBar)
+                            InfoBar, RoundMenu, Action, MenuAnimationType)
 from config import cfg
 import sys
 import os
-from mutagen.mp3 import MP3
-from mutagen import id3
+
+from Parser import Music
+from mutagen import File
 
 
 class PlayList(QWidget, Ui_Form):
@@ -21,17 +24,22 @@ class PlayList(QWidget, Ui_Form):
         self.setObjectName("List")
         self.pushButton.setIcon(FluentIcon.UPDATE)
         self.pushButton.clicked.connect(self.initWindow)
-
+        self.tableWidget.mousePressEvent = self.pressEvent
+        self.tableWidget.mouseReleaseEvent = self.releaseEvent
         self.initWindow()
 
         self.__connectSignalToSlot()
 
     def initWindow(self):
         try:
-            self.songInfos, self.songPosition = self.getMp3info(
+            self.songInfos, self.songPosition = self.getMusicinfo(
                 cfg.musicFolders.value)
         except PermissionError:
             InfoBar.error("权限错误", "没有足够的权限", parent=self)
+
+        self.initTabel()
+
+    def initTabel(self):
         self.tableWidget.setEditTriggers(
             QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tableWidget.setWordWrap(False)
@@ -46,6 +54,7 @@ class PlayList(QWidget, Ui_Form):
         self.tableWidget.setHorizontalHeaderLabels(
             ['标题', '艺术家', '专辑', '时长'])
         self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeRowsToContents()
         self.setQss()
 
     def setQss(self):
@@ -64,29 +73,26 @@ class PlayList(QWidget, Ui_Form):
 
         cfg.themeChanged.connect(self.__onThemeChanged)
 
-    def getMp3info(self, directories: list):
-        all_files = []
-        all_paths = []
+    def pressEvent(self, e: QMouseEvent):
+        return QTableView.mousePressEvent(self.tableWidget, e)
+
+
+
+    def getMusicinfo(self, directories: list):
+        infos = []
+        paths = []
         for directory in directories:
             for filename in os.listdir(directory):
-                if filename.endswith('.mp3'):
-                    filepath = os.path.join(directory, filename)
-                    all_paths.append(filepath)
-                    audio = MP3(filepath)
-                    title = audio.get('TIT2', 'Unknown Title')
-                    artist = audio.get('TPE1', 'Unknown Artist')
-                    album = audio.get('TALB', 'Unknown Album')
-                    length_in_seconds = int(audio.info.length)
-                    minutes, seconds = divmod(length_in_seconds, 60)
-                    length = f"{minutes:02d}:{seconds:02d}"
-                    if not isinstance(title, str):
-                        title = title.text[0]
-                    if not isinstance(artist, str):
-                        artist = artist.text[0]
-                    if not isinstance(album, str):
-                        album = album.text[0]
-                    all_files.append([title, artist, album, length])
-        return all_files, all_paths
+                filepath = os.path.join(directory, filename)
+                if not File(filepath):
+                    continue
+                paths.append(filepath)
+                audio = Music(filepath)
+                infos.append([audio.Title,
+                              audio.Artist,
+                              audio.Album,
+                              audio.Length])
+        return infos, paths
 
 
 if __name__ == '__main__':
