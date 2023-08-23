@@ -116,11 +116,11 @@ class Config(QConfig):
 
 
 YEAR = 2023
-AUTHOR = "zhiyiYo"
+AUTHOR = "Franknah"
 VERSION = __version__
-HELP_URL = "https://pyqt-fluent-widgets.readthedocs.io"
-FEEDBACK_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/issues"
-RELEASE_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/releases/latest"
+HELP_URL = "https://github.com/Franknah/Mind-Player"
+FEEDBACK_URL = "https://github.com/Franknah/Mind-Player/issues"
+RELEASE_URL = ""
 
 
 cfg = Config()

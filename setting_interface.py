@@ -113,7 +113,7 @@ class SettingInterface(SmoothScrollArea):
             FIF.HELP,
             self.tr('Help'),
             self.tr(
-                'Discover new features and learn useful tips about PyQt-Fluent-Widgets'),
+                'Discover new features and learn useful tips about Mind Player'),
             self.aboutGroup
         )
         self.feedbackCard = PrimaryPushSettingCard(
