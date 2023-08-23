@@ -19,9 +19,9 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QLayout, QSizePolicy, QToolButton,
     QVBoxLayout, QWidget)
 
-from qfluentwidgets import (DropDownToolButton, PrimaryPushButton, PushButton, Slider,
-    SubtitleLabel, ToggleButton, ToolButton, TransparentDropDownToolButton,
-    TransparentPushButton, TransparentToolButton)
+from qfluentwidgets import (CardWidget, DropDownToolButton, PrimaryPushButton, PushButton,
+    Slider, SubtitleLabel, ToggleButton, ToolButton,
+    TransparentDropDownToolButton, TransparentPushButton, TransparentToolButton)
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -30,43 +30,54 @@ class Ui_Form(object):
         Form.resize(549, 366)
         self.verticalLayout = QVBoxLayout(Form)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.label_lyric = SubtitleLabel(Form)
+        self.CardWidget = CardWidget(Form)
+        self.CardWidget.setObjectName(u"CardWidget")
+        self.horizontalLayout_3 = QHBoxLayout(self.CardWidget)
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.label_lyric = SubtitleLabel(self.CardWidget)
         self.label_lyric.setObjectName(u"label_lyric")
         self.label_lyric.setStyleSheet(u"")
         self.label_lyric.setFrameShape(QFrame.NoFrame)
         self.label_lyric.setFrameShadow(QFrame.Plain)
         self.label_lyric.setAlignment(Qt.AlignCenter)
 
-        self.verticalLayout.addWidget(self.label_lyric)
+        self.horizontalLayout_3.addWidget(self.label_lyric)
+
+
+        self.verticalLayout.addWidget(self.CardWidget)
 
         self.gridLayout_3 = QGridLayout()
         self.gridLayout_3.setObjectName(u"gridLayout_3")
         self.gridLayout_3.setSizeConstraint(QLayout.SetDefaultConstraint)
+        self.gridLayout_3.setVerticalSpacing(0)
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.labelLeft = QLabel(Form)
         self.labelLeft.setObjectName(u"labelLeft")
         self.labelLeft.setMinimumSize(QSize(0, 0))
 
-        self.gridLayout_3.addWidget(self.labelLeft, 2, 2, 1, 1, Qt.AlignRight)
+        self.horizontalLayout_4.addWidget(self.labelLeft, 0, Qt.AlignRight)
+
+        self.horizontalSlider = Slider(Form)
+        self.horizontalSlider.setObjectName(u"horizontalSlider")
+        self.horizontalSlider.setMaximumSize(QSize(16777215, 16777215))
+        self.horizontalSlider.setOrientation(Qt.Horizontal)
+
+        self.horizontalLayout_4.addWidget(self.horizontalSlider)
 
         self.labelRight = QLabel(Form)
         self.labelRight.setObjectName(u"labelRight")
 
-        self.gridLayout_3.addWidget(self.labelRight, 2, 4, 1, 1, Qt.AlignLeft)
+        self.horizontalLayout_4.addWidget(self.labelRight, 0, Qt.AlignLeft)
 
-        self.horizontalSlider = Slider(Form)
-        self.horizontalSlider.setObjectName(u"horizontalSlider")
-        self.horizontalSlider.setMaximumSize(QSize(900, 22))
-        self.horizontalSlider.setOrientation(Qt.Horizontal)
 
-        self.gridLayout_3.addWidget(self.horizontalSlider, 2, 3, 1, 1)
+        self.gridLayout_3.addLayout(self.horizontalLayout_4, 1, 2, 1, 1)
 
         self.labelTitle = SubtitleLabel(Form)
         self.labelTitle.setObjectName(u"labelTitle")
-        font = QFont()
-        font.setBold(True)
-        self.labelTitle.setFont(font)
+        self.labelTitle.setAlignment(Qt.AlignBottom|Qt.AlignLeading|Qt.AlignLeft)
 
-        self.gridLayout_3.addWidget(self.labelTitle, 0, 2, 1, 3)
+        self.gridLayout_3.addWidget(self.labelTitle, 0, 2, 1, 1)
 
 
         self.verticalLayout.addLayout(self.gridLayout_3)
