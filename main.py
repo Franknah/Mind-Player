@@ -1,17 +1,19 @@
 import sys
 import random
-from qframelesswindow import WindowEffect
 from qfluentwidgets import (
     NavigationItemPosition, FluentIcon as FIF, isDarkTheme,
     FluentTranslator, Theme, setTheme, SplashScreen, InfoBar,
-    FluentWindow, SystemTrayMenu, Action, toggleTheme)
-from PySide6.QtWidgets import QApplication, QTableWidgetItem, QSystemTrayIcon, QMenu
+    FluentWindow, SystemTrayMenu, Action, RoundMenu, MenuAnimationType)
+from PySide6.QtWidgets import (QApplication, QTableWidgetItem,
+                               QSystemTrayIcon, QTableView)
 from player import MyAudioPlayer, PlayMode
 from list import PlayList
 from config import cfg
-from PySide6.QtGui import QIcon
+from desktopLyric import LyricWindow
+from PySide6.QtGui import QIcon, QContextMenuEvent, QMouseEvent
 from setting_interface import SettingInterface
-from PySide6.QtCore import (Qt, QTranslator, Slot, QSize, QTimer, QEventLoop)
+from PySide6.QtCore import (Qt, QTranslator, QSize, QTimer, QEventLoop)
+from functools import singledispatchmethod
 
 
 class Main(FluentWindow):
@@ -23,13 +25,14 @@ class Main(FluentWindow):
         self.initWindow()
         self.setSplashScreen()
         self.index = 0
+        self.playlist = []
         self.setQss()
-        cfg.themeChanged.connect(self.__onThemeChanged)
         self.musicInterface = MyAudioPlayer()
         self.ListInterface = PlayList()
         self.settingInterface = SettingInterface()
         self.shareSignal()
         self.initNavigation()
+        self.resetList()
         self.wscreen.finish()
         self.tray = tray(self)
         self.tray.show()
@@ -47,7 +50,11 @@ class Main(FluentWindow):
         loop.exec()
 
     def shareSignal(self):
+        cfg.themeChanged.connect(self.__onThemeChanged)
+        cfg.effect.valueChanged.connect(self.setQss)
         self.stackedWidget.currentChanged.connect(self.scollToItem)
+        self.ListInterface.tableWidget.contextMenuEvent = self.contextEvent
+        self.ListInterface.tableWidget.mouseReleaseEvent = self.releaseEvent
         self.ListInterface.tableWidget.itemDoubleClicked.connect(
             self.switchSong)
         self.ListInterface.pushButton.clicked.connect(
@@ -58,29 +65,39 @@ class Main(FluentWindow):
             lambda: self.nextSong(-1))
         self.musicInterface.player.playbackStateChanged.connect(
             lambda: self.nextSong(1, True))
+        self.musicInterface.modeChanged.connect(self.resetList)
+        self.musicInterface.toolButtonDtLrc.clicked.connect(lambda: l.show())
+        self.musicInterface.lyricChanged.connect(
+            lambda: l.showLyric(self.musicInterface.label_lyric.text()))
+
+    def contextEvent(self, e: QContextMenuEvent) -> None:
+        e.ignore()
+        self.menu = RoundMenu()
+        row = self.ListInterface.tableWidget.itemAt(e.pos()).row()
+        actions = [
+            Action('播放',
+                   triggered=lambda: self.switchSong(row)),
+            Action('下一首播放',
+                   triggered=lambda: self.setNextMusic(row)),
+        ]
+        self.menu.addActions(actions)
+        self.menu.exec(e.globalPos(), aniType=MenuAnimationType.DROP_DOWN)
+
+    def releaseEvent(self, e: QMouseEvent):
+        table = self.ListInterface.tableWidget
+        QTableView.mouseReleaseEvent(table, e)
+        table.updateSelectedRows()
+        if table.indexAt(e.position().toPoint()).row() < 0 or e.button() == Qt.RightButton:
+            table._setPressedRow(-1)
+        self.selectedRow = set(item.row() for item in table.selectedItems())
 
     def setQss(self):
-        setTheme(cfg.theme)
-        self.windowEffect.removeBackgroundEffect(self.winId())
-        if cfg.effect.value == "Mica":
-            self.setMicaEffectEnabled(True)
-            self.windowEffect.setMicaEffect(self.winId(), isDarkTheme())
-        elif cfg.effect.value == "Acrylic":
-            if isDarkTheme():
-                self.windowEffect.setAcrylicEffect(self.winId(), "F2F2F299")
-            else:
-                self.windowEffect.setAcrylicEffect(self.winId())
-        self.setBackgroundColor(self._normalBackgroundColor())
+        self.setMicaEffectEnabled(cfg.effect.value)
 
     def __onThemeChanged(self, theme: Theme):
         """ theme changed slot """
         # change the theme of qfluentwidgets
-        # self.setMicaEffectEnabled(False)
-        if self.isMicaEffectEnabled():
-            self.windowEffect.setMicaEffect(self.winId(), isDarkTheme())
         setTheme(theme)
-
-        # self.setQss()
 
     def scollToItem(self):
         ''' Scoll to the latest item '''
@@ -103,8 +120,32 @@ class Main(FluentWindow):
         w, h = desktop.width(), desktop.height()
         self.move(w//2 - self.width()//2, h//2 - self.height()//2)
 
+    def setNextMusic(self, itemRow):
+        self.playlist.insert(self.index+1, itemRow)
+
+    def resetList(self):
+        self.playlist = []
+        rowCount = self.ListInterface.tableWidget.rowCount()
+        mode = self.musicInterface.playMode
+        if (mode == PlayMode.order or
+            mode == PlayMode.single or
+                mode == PlayMode.repeat):
+            for i in range(0, rowCount):
+                self.playlist.append(i)
+        elif mode == PlayMode.random:
+            while not len(self.playlist) == rowCount:
+                ranNum = random.randint(0, rowCount)
+                if self.playlist == []:
+                    self.playlist.append(ranNum)
+                    continue
+                if self.playlist[-1] == ranNum:
+                    continue
+                self.playlist.append(ranNum)
+
+    @singledispatchmethod
     def switchSong(self, item: QTableWidgetItem):
-        '''列表双击响应事件'''
+        '''switch current music to the song which is selected'''
+        self.resetList()
         songPath = self.ListInterface.songPosition
         songinfo = self.ListInterface.songInfos
         self.index = item.row()
@@ -116,7 +157,18 @@ class Main(FluentWindow):
         self.tray.setToolTip(self.windowTitle() + " - " +
                              songinfo[self.index][0])
 
-    def nextSong(self, distance: int, isAuto: bool = False):
+    @switchSong.register(int)
+    def _(self, item: int):
+        songPath = self.ListInterface.songPosition
+        songinfo = self.ListInterface.songInfos
+        self.index = item
+        self.musicInterface.switchSong(
+            songPath[self.index], songinfo[self.index], self.index)
+        self.switchTo(self.musicInterface)
+        self.tray.setToolTip(self.windowTitle() + " - " +
+                             songinfo[self.index][0])
+
+    def nextSong(self, distance: int = 1, isAuto: bool = False):
         # "isAuto" is for recongize whether the function is actived by the button or a stop signal
         if self.musicInterface.fp == "":
             return
@@ -131,14 +183,16 @@ class Main(FluentWindow):
             self.index += distance
 
         elif playmode == PlayMode.random:
-            new = random.randint(0, len(songPath)-1)
-            while new == self.index:
-                new = random.randint(0, len(songPath)-1)
-            self.index = new
+            self.index += distance
+            if self.index >= len(songPath):
+                self.resetList()
+                self.index = 0
 
         elif playmode == PlayMode.single:
             if not isAuto:
                 self.index += distance
+                if self.index >= len(songPath):
+                    self.index = 0
 
         elif playmode == PlayMode.repeat:
             self.index += distance
@@ -146,8 +200,9 @@ class Main(FluentWindow):
                 self.index = 0
 
         try:
+            id = self.playlist[self.index]
             self.musicInterface.switchSong(
-                songPath[self.index], songinfo[self.index], self.index)
+                songPath[id], songinfo[id], id)
             table.setCurrentItem(table.item(self.index, 0))
         except IndexError:
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
@@ -184,6 +239,7 @@ class tray(QSystemTrayIcon):
                 self.window.show()
             elif self.window.isMinimized():
                 self.window.showNormal()
+                self.window.raise_()
 
 
 if __name__ == '__main__':
@@ -202,5 +258,6 @@ if __name__ == '__main__':
 
     # create main window
     w = Main()
+    l = LyricWindow()
     w.show()
     app.exec()

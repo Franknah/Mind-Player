@@ -25,7 +25,7 @@ class PlayList(QWidget, Ui_Form):
         self.pushButton.setIcon(FluentIcon.UPDATE)
         self.pushButton.clicked.connect(self.initWindow)
         self.tableWidget.mousePressEvent = self.pressEvent
-        self.tableWidget.mouseReleaseEvent = self.releaseEvent
+        # self.tableWidget.mouseReleaseEvent = self.releaseEvent
         self.initWindow()
 
         self.__connectSignalToSlot()

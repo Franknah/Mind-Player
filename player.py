@@ -11,12 +11,12 @@ from PySide6.QtGui import QPixmap, QAction, QIcon
 from PySide6.QtWidgets import (QApplication, QWidget, QFrame,
                                QFileDialog, QVBoxLayout, QLabel)
 # from PySide6.QtMultimedia import QMediaFormat
-from resource.ui.Ui_player import Ui_Form
+from resource.ui.player_ui import Ui_Form
 from qfluentwidgets import (isDarkTheme, setTheme, RoundMenu, InfoBar,
                             InfoBarPosition, Theme, FluentIcon as FiF,
                             FlyoutViewBase, Flyout, FlyoutAnimationType,
-                            Slider, Action, ToolTipFilter)
-from LrcParser import LyricDict
+                            Slider, Action, ToolTipFilter,FluentIconBase)
+from Parser import Lyric
 from config import cfg
 
 
@@ -32,10 +32,22 @@ class PlayMode(enum.Enum):
     repeat = 2
     single = 3
 
-
+class PIF(FluentIconBase,enum.Enum):
+    order = "play in order"
+    random = "random"
+    repeat = "repeat"
+    single= "single repeat"
+    sound = "sound"
+    soundEmpty="sound empty"
+    lyric = "lyric"
+    def path(self,theme=cfg.theme):
+        color = "dark" if isDarkTheme() else "light"
+        return f"resource/icon/{self.value}-{color}.svg"
+    
 class MyAudioPlayer(QWidget, Ui_Form):
     '''播放页'''
-
+    modeChanged = Signal()
+    lyricChanged = Signal()
     def __init__(self):
         super().__init__()
         # self.fp =r"resource\たぶん-YOASOBI.mp3"
@@ -46,6 +58,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.player = QMediaPlayer()
         self.playMode = PlayMode.order
         self.horizontalSlider.setValue(0)
+        self.toolButtonDtLrc.setIcon(PIF.lyric)
         self.audioOutput = QAudioOutput()  # 不能实例化为临时变量，否则被自动回收导致无法播放
         self.player.setAudioOutput(self.audioOutput)
         self.block = QSignalBlocker(self.player)
@@ -66,56 +79,47 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.pushButton.clicked.connect(self.StateInit)
         self.player.positionChanged.connect(self.positionChanged)
         self.player.durationChanged.connect(self.durationChanged)
-        # self.player.playbackStateChanged.connect(self.stateChanged)
         self.horizontalSlider.sliderMoved.connect(self.dragSlider)
         self.horizontalSlider.sliderReleased.connect(self.releaseSlider)
-        self.toolButton.clicked.connect(self.changeLyric)
-        self.toolButton_3.clicked.connect(lambda: Flyout.make(CustomFlyoutView(
-            self), self.toolButton_3, self, FlyoutAnimationType.PULL_UP))
+        self.pushButtonLyric.clicked.connect(self.changeLyric)
+        self.toolButtonVolumn.clicked.connect(lambda: Flyout.make(CustomFlyoutView(
+            self), self.toolButtonVolumn, self, FlyoutAnimationType.PULL_UP))
 
     def initWindow(self):
-        # self.player.setSource(QUrl.fromLocalFile(self.fp))
-        self.lyric_dict = LyricDict(self.lyricPath)
+        self.lyric_dict = Lyric(self.lyricPath)
 
-        # self.player.errorOccurred.connect(self._player_error)
-        # Qt6中`QMediaPlayer.setVolume`已被移除，使用`QAudioOutput.setVolume`替代
 
     def show_lyric(self, position: int):
         # 查找对应的歌词并显示在标签上
         text = self.lyric_dict.getLyric(position)
         self.label_lyric.setText(text)
+        self.lyricChanged.emit()
 
     def setQss(self):
         color = 'dark' if isDarkTheme() else 'light'
         with open(f'resource/qss/{color}/player.qss', encoding='utf-8') as f:
             self.setStyleSheet(f.read())
-        self.action1.setIcon(
-            QIcon(f"resource\\icon\\play in order-{color}.svg"))
-        self.action2.setIcon(QIcon(f"resource\\icon\\random-{color}.svg"))
-        self.action3.setIcon(QIcon(f"resource\\icon\\repeat-{color}.svg"))
-        self.action4.setIcon(
-            QIcon(f"resource\\icon\\single repeat-{color}.svg"))
         self.switchMode(self.playMode)
         if self.volumnSlider.value() == 0:
-            self.toolButton_3.setIcon(
-                QIcon(f"resource\\icon\\sound empty-{color}.svg"))
+            self.toolButtonVolumn.setIcon(PIF.soundEmpty)
         else:
-            self.toolButton_3.setIcon(
-                QIcon(f"resource\\icon\\sound-{color}.svg"))
+            self.toolButtonVolumn.setIcon(PIF.sound)
 
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'
-        self.action1 = Action(QIcon(f"resource\\icon\\play in order-{color}.svg"),
+        self.action1 = Action(PIF.order,
                               "顺序播放", self,
                               triggered=lambda: self.switchMode(PlayMode.order))
-        self.action2 = Action(QIcon(f"resource\\icon\\random-{color}.svg"), "随机播放", self,
+        self.action2 = Action(PIF.random,
+                              "随机播放", self,
                               triggered=lambda: self.switchMode(PlayMode.random))
-        self.action3 = Action(QIcon(f"resource\\icon\\repeat-{color}.svg"),
+        self.action3 = Action(PIF.repeat,
                               "列表循环", self,
                               triggered=lambda: self.switchMode(PlayMode.repeat))
-        self.action4 = Action(QIcon(f"resource\\icon\\single repeat-{color}.svg"),
+        self.action4 = Action(PIF.single,
                               "单曲循环", self,
                               triggered=lambda: self.switchMode(PlayMode.single))
+
         self.actions = [
             self.action1,
             self.action2,
@@ -123,7 +127,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
             self.action4
         ]
         self.menu.addActions(self.actions)
-        self.toolButton_2.setMenu(self.menu)
+        self.toolButtonPlayMode.setMenu(self.menu)
 
     def __onThemeChanged(self, theme: Theme):
         """ theme changed slot """
@@ -158,16 +162,16 @@ class MyAudioPlayer(QWidget, Ui_Form):
     def switchMode(self, mode: PlayMode):
         '''切换播放模式'''
         self.playMode = mode
-        self.toolButton_2.setIcon(self.actions[mode.value].icon())
+        self.toolButtonPlayMode.setIcon(self.actions[mode.value].icon())
         if mode == PlayMode.order:
-            self.toolButton_2.setToolTip("顺序播放")
+            self.toolButtonPlayMode.setToolTip("顺序播放")
         elif mode == PlayMode.random:
-            self.toolButton_2.setToolTip("随机播放")
+            self.toolButtonPlayMode.setToolTip("随机播放")
         elif mode == PlayMode.repeat:
-            self.toolButton_2.setToolTip("列表循环")
+            self.toolButtonPlayMode.setToolTip("列表循环")
         elif mode == PlayMode.single:
-            self.toolButton_2.setToolTip("单曲循环")
-
+            self.toolButtonPlayMode.setToolTip("单曲循环")
+        self.modeChanged.emit()
     @Slot()
     def StateInit(self):
         if self.fp == "":
@@ -216,7 +220,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
     def updateTime(self, position: int):
         second = floor((position / 1000) % 60)
         minute = floor((position / (1000 * 60)) % 60)
-        self.label.setText(f"{minute:02d} :{second:02d}")
+        self.labelLeft.setText(f"{minute:02d} :{second:02d}")
 
     @Slot()
     def durationChanged(self, duration):
@@ -224,7 +228,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
         minute = int((duration / (1000 * 60)) % 60)
         self.horizontalSlider.setMaximum(int(duration/1000)*2)
 
-        self.label_2.setText(f"{minute:02d} :{second:02d}")
+        self.labelRight.setText(f"{minute:02d} :{second:02d}")
 
     @Slot()
     def dragSlider(self):
@@ -272,8 +276,8 @@ class CustomFlyoutView(FlyoutViewBase):
         self.slider = parent.volumnSlider
         self.slider.setValue(parent.audioOutput.volume()*100)
         self.slider.setMaximum(100)
-        self.label = QLabel(self)
-        self.label.setAlignment(Qt.AlignCenter)
+        self.labelLeft = QLabel(self)
+        self.labelLeft.setAlignment(Qt.AlignCenter)
         self.slider.valueChanged.connect(self.changeVolumn)
         self.vBoxLayout.setSpacing(12)
         self.vBoxLayout.setContentsMargins(20, 16, 20, 16)
@@ -282,7 +286,7 @@ class CustomFlyoutView(FlyoutViewBase):
     def changeVolumn(self):
         value = self.slider.value()
         self.parent().parent().audioOutput.setVolume(value/100)
-        self.label.setText("当前音量："+str(self.slider.value()))
+        self.labelLeft.setText("当前音量："+str(self.slider.value()))
         self.parent().parent().setQss()
 
 

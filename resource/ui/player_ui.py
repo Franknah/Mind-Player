@@ -40,6 +40,7 @@ class Ui_Form(object):
         self.label_lyric.setFrameShape(QFrame.NoFrame)
         self.label_lyric.setFrameShadow(QFrame.Plain)
         self.label_lyric.setAlignment(Qt.AlignCenter)
+        self.label_lyric.setWordWrap(True)
 
         self.horizontalLayout_3.addWidget(self.label_lyric)
 
