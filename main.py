@@ -1,21 +1,22 @@
 import sys
-import random
 import os
+import random
+from config import cfg
+from list import PlayList
+from desktopLyric import LyricWindow
+from player import MyAudioPlayer, PlayMode
+from setting_interface import SettingInterface
+
+from functools import singledispatchmethod
+from PySide6.QtWidgets import (QApplication, QTableWidgetItem,
+                               QSystemTrayIcon, QTableView)
 from qfluentwidgets import (
     NavigationItemPosition, FluentIcon as FIF, isDarkTheme,
     FluentTranslator, Theme, setTheme, SplashScreen, InfoBar,
     FluentWindow, SystemTrayMenu, Action, RoundMenu, MenuAnimationType,
     MessageBox)
-from PySide6.QtWidgets import (QApplication, QTableWidgetItem,
-                               QSystemTrayIcon, QTableView)
-from player import MyAudioPlayer, PlayMode
-from list import PlayList
-from config import cfg
-from desktopLyric import LyricWindow
 from PySide6.QtGui import QIcon, QContextMenuEvent, QMouseEvent
-from setting_interface import SettingInterface
 from PySide6.QtCore import (Qt, QTranslator, QSize, QTimer, QEventLoop)
-from functools import singledispatchmethod
 
 
 class Main(FluentWindow):
@@ -234,13 +235,15 @@ class Main(FluentWindow):
         except IndexError:
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
             self.index -= distance
+            
     def deleteSong(self,row:int):
         path=self.ListInterface.songPosition[row]
         message=MessageBox("删除歌曲", f"确定删除{path}吗？", parent=self.ListInterface)
         message.show()
         if message.exec():
             try:
-                os.remove(path)
+                # delete song and its data
+                # os.remove(path)
                 self.playlist.remove(row)
                 self.ListInterface.songPosition.remove(path)
                 self.ListInterface.songInfos.pop(row)

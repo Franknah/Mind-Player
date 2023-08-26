@@ -91,7 +91,10 @@ class PlayList(QWidget, Ui_Form):
                 infos.append([audio.Title,
                               audio.Artist,
                               audio.Album,
-                              audio.Length])
+                              audio.Length,
+                              audio.path,
+                              audio.Year,
+                              audio.Track])
         return infos, paths
 
 
