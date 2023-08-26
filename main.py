@@ -1,9 +1,11 @@
 import sys
 import random
+import os
 from qfluentwidgets import (
     NavigationItemPosition, FluentIcon as FIF, isDarkTheme,
     FluentTranslator, Theme, setTheme, SplashScreen, InfoBar,
-    FluentWindow, SystemTrayMenu, Action, RoundMenu, MenuAnimationType)
+    FluentWindow, SystemTrayMenu, Action, RoundMenu, MenuAnimationType,
+    MessageBox)
 from PySide6.QtWidgets import (QApplication, QTableWidgetItem,
                                QSystemTrayIcon, QTableView)
 from player import MyAudioPlayer, PlayMode
@@ -74,11 +76,31 @@ class Main(FluentWindow):
         e.ignore()
         self.menu = RoundMenu()
         row = self.ListInterface.tableWidget.itemAt(e.pos()).row()
+        title = self.ListInterface.songInfos[row][0]
+        artist =self.ListInterface.songInfos[row][1]
+        album = self.ListInterface.songInfos[row][2]
+        length = self.ListInterface.songInfos[row][3]
+        path =self.ListInterface.songInfos[row][4]
+        year =self.ListInterface.songInfos[row][5]
+        track =self.ListInterface.songInfos[row][6]
+
         actions = [
             Action('播放',
                    triggered=lambda: self.switchSong(row)),
             Action('下一首播放',
                    triggered=lambda: self.setNextMusic(row)),
+            Action(FIF.INFO,'更多信息',  
+                   triggered=lambda: MessageBox("详细信息",
+                    "\n标题 : "+title+"\n\n"+
+                    "艺术家 :" + artist + "\n\n"+
+                    "专辑 : " + album + "\n\n"+
+                    "长度 : " + length + "\n\n"+
+                    "路径 : " + path.replace("\\","/") + "\n\n"+
+                    "年份 : " + year + "\n\n"+
+                    "编号 : " + track
+                    ,self).show()),
+            Action('删除',
+                   triggered=lambda: self.deleteSong(row)),
         ]
         self.menu.addActions(actions)
         self.menu.exec(e.globalPos(), aniType=MenuAnimationType.DROP_DOWN)
@@ -132,6 +154,8 @@ class Main(FluentWindow):
                 mode == PlayMode.repeat):
             for i in range(0, rowCount):
                 self.playlist.append(i)
+            self.index = self.ListInterface.tableWidget.currentRow()
+            # print(self.playlist)
         elif mode == PlayMode.random:
             while not len(self.playlist) == rowCount:
                 ranNum = random.randint(0, rowCount)
@@ -181,6 +205,9 @@ class Main(FluentWindow):
 
         if playmode == PlayMode.order:
             self.index += distance
+            if self.index < 0:
+                InfoBar.error("","已经到顶了",parent=self.musicInterface)
+                self.index -= distance
 
         elif playmode == PlayMode.random:
             self.index += distance
@@ -203,10 +230,29 @@ class Main(FluentWindow):
             id = self.playlist[self.index]
             self.musicInterface.switchSong(
                 songPath[id], songinfo[id], id)
-            table.setCurrentItem(table.item(self.index, 0))
+            table.setCurrentItem(table.item(id, 0))
         except IndexError:
             InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
             self.index -= distance
+    def deleteSong(self,row:int):
+        path=self.ListInterface.songPosition[row]
+        message=MessageBox("删除歌曲", f"确定删除{path}吗？", parent=self.ListInterface)
+        message.show()
+        if message.exec():
+            try:
+                os.remove(path)
+                self.playlist.remove(row)
+                self.ListInterface.songPosition.remove(path)
+                self.ListInterface.songInfos.pop(row)
+                InfoBar.success("删除成功！", "", parent=self.ListInterface)
+                self.ListInterface.initTabel()
+                self.resetList()
+                self.switchSong(self.index)
+            except Exception as e:
+                InfoBar.error("删除失败！", str(e), parent=self.ListInterface,duration=2000)
+        else:
+            pass
+            
 
     def closeEvent(self, event) -> None:
         event.ignore()
