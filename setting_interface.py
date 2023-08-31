@@ -64,8 +64,8 @@ class SettingInterface(SmoothScrollArea):
         )
         self.effctCard = SwitchSettingCard(
             FIF.TRANSPARENT,
-            self.tr('云母效果'),
-            self.tr("在 Mind Player 启用云母效果"),
+            self.tr('Mica'),
+            self.tr("Turn on Mica effect in Mind-Player"),
             cfg.effect,
             parent=self.personalGroup
         )
@@ -132,10 +132,10 @@ class SettingInterface(SmoothScrollArea):
             self.aboutGroup
         )
         self.configCard = PrimaryPushSettingCard(
-            "打开配置文件",
+            self.tr("Open config file"),
             FIF.SETTING,
-            "配置",
-            "打开配置文件以自行配置",
+            self.tr("Config"),
+            self.tr("Open config file to configure"),
             self.aboutGroup
         )
 
@@ -267,7 +267,7 @@ if __name__ == '__main__':
             self.hBoxLayout.addWidget(self.settingInterface)
 
             self.setWindowIcon(QIcon("resource/logo.png"))
-            self.setWindowTitle("PySide6-Fluent-Widgets")
+            self.setWindowTitle(self.tr("PySide6-Fluent-Widgets"))
 
             self.resize(1080, 784)
             desktop = QApplication.primaryScreen().size()
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     locale = cfg.get(cfg.language).value
     fluentTranslator = FluentTranslator(locale)
     settingTranslator = QTranslator()
-    settingTranslator.load(locale, "settings", ".", "resource/i18n")
+    settingTranslator.load(locale, "setting_interface", ".", "resource/i18n")
 
     app.installTranslator(fluentTranslator)
     app.installTranslator(settingTranslator)
