@@ -33,6 +33,7 @@ class PlayMode(enum.Enum):
     single = 3
 
 class PIF(FluentIconBase,enum.Enum):
+    # Private Icon
     order = "play in order"
     random = "random"
     repeat = "repeat"
@@ -57,8 +58,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.setupUi(self)
         self.player = QMediaPlayer()
         self.playMode = PlayMode.order
-        self.horizontalSlider.setValue(0)
-        self.toolButtonDtLrc.setIcon(PIF.lyric)
+        self.slider.setValue(0)
         self.audioOutput = QAudioOutput()  # 不能实例化为临时变量，否则被自动回收导致无法播放
         self.player.setAudioOutput(self.audioOutput)
         self.block = QSignalBlocker(self.player)
@@ -79,9 +79,10 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.pushButton.clicked.connect(self.StateInit)
         self.player.positionChanged.connect(self.positionChanged)
         self.player.durationChanged.connect(self.durationChanged)
-        self.horizontalSlider.sliderMoved.connect(self.dragSlider)
-        self.horizontalSlider.sliderReleased.connect(self.releaseSlider)
-        self.pushButtonLyric.clicked.connect(self.changeLyric)
+        self.slider.sliderMoved.connect(self.dragSlider)
+        self.slider.clicked.connect(self.clickSlider)
+        self.slider.sliderReleased.connect(self.releaseSlider)
+        self.pushButtonSwitch.clicked.connect(self.changeLyric)
         self.toolButtonVolumn.clicked.connect(lambda: Flyout.make(CustomFlyoutView(
             self), self.toolButtonVolumn, self, FlyoutAnimationType.PULL_UP))
 
@@ -104,6 +105,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
             self.toolButtonVolumn.setIcon(PIF.soundEmpty)
         else:
             self.toolButtonVolumn.setIcon(PIF.sound)
+        self.toolButtonDtLrc.setIcon(PIF.lyric)
 
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'
@@ -157,7 +159,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
             self.lyricPath = os.path.normpath(cfg.lyricFolders.value[self.fp])
         else:
             self.lyricPath = ""
-        self.lyric_dict.updatePath(self.lyricPath)
+        self.lyric_dict.path = self.lyricPath
 
     def switchMode(self, mode: PlayMode):
         '''切换播放模式'''
@@ -206,11 +208,11 @@ class MyAudioPlayer(QWidget, Ui_Form):
     @Slot()
     def positionChanged(self, position: int):
         self.updateTime(position)
-        max = self.horizontalSlider.maximum()
+        max = self.slider.maximum()
         if self.player.duration() != 0:
             value = position/self.player.duration()*max
-            self.horizontalSlider.setValue(value)
-            if self.horizontalSlider.value() == max:
+            self.slider.setValue(value)
+            if self.slider.value() == max:
                 self.isplay = False
         if self.lyricPath != "":
             self.show_lyric(position)
@@ -226,7 +228,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
     def durationChanged(self, duration):
         second = int((duration / 1000) % 60)
         minute = int((duration / (1000 * 60)) % 60)
-        self.horizontalSlider.setMaximum(int(duration/1000)*2)
+        self.slider.setMaximum(int(duration/1000)*2)
 
         self.labelRight.setText(f"{minute:02d} :{second:02d}")
 
@@ -234,18 +236,33 @@ class MyAudioPlayer(QWidget, Ui_Form):
     def dragSlider(self):
         self.label_lyric.setText("")
         self.setToolTip("")
-        self.player.pause()
+        if self.slider.underMouse(): # 解决拖动时仍播放
+            self.player.pause()
+        else:
+            self.player.play()
+        # self.player.pause()
         if self.fp == "":
             return
-        self.block.reblock()
-        slider = self.horizontalSlider
+        # self.block.reblock()
+        slider = self.slider
+        sc = floor(slider.value()/slider.maximum()*self.player.duration())
+        if sc == self.player.duration():
+            return
+        self.player.setPosition(sc)
+        self.updateTime(self.player.position())
+    @Slot()
+    def clickSlider(self):
+        if self.fp == "":
+            return
+        slider = self.slider
         sc = floor(slider.value()/slider.maximum()*self.player.duration())
         self.player.setPosition(sc)
         self.updateTime(self.player.position())
+        self.player.play()
 
     @Slot()
     def releaseSlider(self):
-        self.block.unblock()
+        # self.block.unblock()
         self.setPlayState(QMediaPlayer.PlaybackState.PlayingState)
         # self.positionChanged(self.player.position())
 
@@ -253,12 +270,15 @@ class MyAudioPlayer(QWidget, Ui_Form):
     def changeLyric(self):
         '''切换歌词'''
         try:
-            path, _ = QFileDialog().getOpenFileName(self, "选择歌词文件", filter="*.lrc")
+            path, _ = QFileDialog().getOpenFileName(self, 
+                                                    "选择歌词文件",
+                                                    cfg.musicFolders.value[0], 
+                                                    filter="*.lrc")
             if path == "":
                 return
 
             self.lyricPath = os.path.normpath(path)
-            self.lyric_dict.updatePath(path)
+            self.lyric_dict
             dict = cfg.lyricFolders.value.copy()
 
             dict[self.fp] = self.lyricPath
