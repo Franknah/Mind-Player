@@ -27,7 +27,7 @@ class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(549, 366)
+        Form.resize(549, 335)
         self.verticalLayout = QVBoxLayout(Form)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.CardWidget = CardWidget(Form)
@@ -59,12 +59,12 @@ class Ui_Form(object):
 
         self.horizontalLayout_4.addWidget(self.labelLeft, 0, Qt.AlignRight)
 
-        self.horizontalSlider = Slider(Form)
-        self.horizontalSlider.setObjectName(u"horizontalSlider")
-        self.horizontalSlider.setMaximumSize(QSize(16777215, 16777215))
-        self.horizontalSlider.setOrientation(Qt.Horizontal)
+        self.slider = Slider(Form)
+        self.slider.setObjectName(u"slider")
+        self.slider.setMaximumSize(QSize(16777215, 16777215))
+        self.slider.setOrientation(Qt.Horizontal)
 
-        self.horizontalLayout_4.addWidget(self.horizontalSlider)
+        self.horizontalLayout_4.addWidget(self.slider)
 
         self.labelRight = QLabel(Form)
         self.labelRight.setObjectName(u"labelRight")
@@ -127,10 +127,10 @@ class Ui_Form(object):
 
         self.gridLayout.addLayout(self.horizontalLayout_2, 2, 6, 1, 1)
 
-        self.pushButtonLyric = TransparentPushButton(Form)
-        self.pushButtonLyric.setObjectName(u"pushButtonLyric")
+        self.pushButtonSwitch = TransparentPushButton(Form)
+        self.pushButtonSwitch.setObjectName(u"pushButtonSwitch")
 
-        self.gridLayout.addWidget(self.pushButtonLyric, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.pushButtonSwitch, 2, 0, 1, 1)
 
 
         self.verticalLayout.addLayout(self.gridLayout)
@@ -152,6 +152,6 @@ class Ui_Form(object):
         self.pushButtonNext.setText(QCoreApplication.translate("Form", u"\u4e0b\u4e00\u9996", None))
         self.toolButtonVolumn.setText("")
         self.toolButtonPlayMode.setText("")
-        self.pushButtonLyric.setText(QCoreApplication.translate("Form", u"\u5207\u6362\u6b4c\u8bcd", None))
+        self.pushButtonSwitch.setText(QCoreApplication.translate("Form", u"\u5207\u6362\u6b4c\u8bcd", None))
     # retranslateUi
 
