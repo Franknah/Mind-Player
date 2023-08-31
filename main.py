@@ -8,13 +8,11 @@ from player import MyAudioPlayer, PlayMode
 from setting_interface import SettingInterface
 
 from functools import singledispatchmethod
-from PySide6.QtWidgets import (QApplication, QTableWidgetItem,
-                               QSystemTrayIcon, QTableView)
-from qfluentwidgets import (
-    NavigationItemPosition, FluentIcon as FIF, isDarkTheme,
-    FluentTranslator, Theme, setTheme, SplashScreen, InfoBar,
-    FluentWindow, SystemTrayMenu, Action, RoundMenu, MenuAnimationType,
-    MessageBox)
+from PySide6.QtWidgets import (
+    QApplication, QTableWidgetItem, QSystemTrayIcon, QTableView)
+from qfluentwidgets import (NavigationItemPosition, FluentIcon as FIF, isDarkTheme, FluentTranslator, Theme, setTheme,
+                            SplashScreen, InfoBar, FluentWindow, SystemTrayMenu, Action, RoundMenu, MenuAnimationType,
+                            MessageBox)
 from PySide6.QtGui import QIcon, QContextMenuEvent, QMouseEvent
 from PySide6.QtCore import (Qt, QTranslator, QSize, QTimer, QEventLoop)
 
@@ -78,29 +76,33 @@ class Main(FluentWindow):
         self.menu = RoundMenu()
         row = self.ListInterface.tableWidget.itemAt(e.pos()).row()
         title = self.ListInterface.songInfos[row][0]
-        artist =self.ListInterface.songInfos[row][1]
+        artist = self.ListInterface.songInfos[row][1]
         album = self.ListInterface.songInfos[row][2]
         length = self.ListInterface.songInfos[row][3]
-        path =self.ListInterface.songInfos[row][4]
-        year =self.ListInterface.songInfos[row][5]
-        track =self.ListInterface.songInfos[row][6]
+        path = self.ListInterface.songInfos[row][4]
+        year = self.ListInterface.songInfos[row][5]
+        track = self.ListInterface.songInfos[row][6]
 
         actions = [
-            Action('播放',
+            Action(FIF.PLAY, self.tr('播放'),
                    triggered=lambda: self.switchSong(row)),
-            Action('下一首播放',
+            Action(FIF.ADD, self.tr('下一首播放'),
                    triggered=lambda: self.setNextMusic(row)),
-            Action(FIF.INFO,'更多信息',  
-                   triggered=lambda: MessageBox("详细信息",
-                    "\n标题 : "+title+"\n\n"+
-                    "艺术家 :" + artist + "\n\n"+
-                    "专辑 : " + album + "\n\n"+
-                    "长度 : " + length + "\n\n"+
-                    "路径 : " + path.replace("\\","/") + "\n\n"+
-                    "年份 : " + year + "\n\n"+
-                    "编号 : " + track
-                    ,self).show()),
-            Action('删除',
+            Action(FIF.REMOVE, self.tr("从播放列表中移除"),
+                   triggered=lambda: self.playlist.remove(row)),
+            Action(FIF.EDIT, self.tr("编辑信息"),
+                   triggered=lambda: self.ListInterface.creatDialog(row)),
+            Action(FIF.INFO,
+                   self.tr('更多信息'),
+                   triggered=lambda: MessageBox(
+                       self.tr("详细信息"), "标题 : " + title + "\n\n" +
+                       "艺术家 :" + artist + "\n\n" +
+                       "专辑 : " + album + "\n\n" +
+                       "长度 : " + length + "\n\n" +
+                       "路径 : " + path.replace("\\", "/") + "\n\n" +
+                       "年份 : " + year + "\n\n" +
+                       "编号 : " + track, self).show()),
+            Action(FIF.DELETE, self.tr('删除'),
                    triggered=lambda: self.deleteSong(row)),
         ]
         self.menu.addActions(actions)
@@ -130,10 +132,10 @@ class Main(FluentWindow):
 
     def initNavigation(self):
         # self.addSubInterface(self.searchInterface, FluentIcon.SEARCH, 'Search')
-        self.addSubInterface(self.musicInterface, FIF.MUSIC, "播放页")
-        self.addSubInterface(self.ListInterface, FIF.ALBUM, "播放列表")
+        self.addSubInterface(self.musicInterface, FIF.MUSIC, self.tr("播放页"))
+        self.addSubInterface(self.ListInterface, FIF.ALBUM, self.tr("播放列表"))
         self.addSubInterface(self.settingInterface, FIF.SETTING,
-                             "设置", NavigationItemPosition.BOTTOM)
+                             self.tr("设置"), NavigationItemPosition.BOTTOM)
         self.switchTo(self.musicInterface)
 
     def initWindow(self):
@@ -141,18 +143,16 @@ class Main(FluentWindow):
         self.setWindowTitle("Mind Player")
         desktop = QApplication.screens()[0].availableGeometry()
         w, h = desktop.width(), desktop.height()
-        self.move(w//2 - self.width()//2, h//2 - self.height()//2)
+        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 
     def setNextMusic(self, itemRow):
-        self.playlist.insert(self.index+1, itemRow)
+        self.playlist.insert(self.index + 1, itemRow)
 
     def resetList(self):
         self.playlist = []
         rowCount = self.ListInterface.tableWidget.rowCount()
         mode = self.musicInterface.playMode
-        if (mode == PlayMode.order or
-            mode == PlayMode.single or
-                mode == PlayMode.repeat):
+        if (mode == PlayMode.order or mode == PlayMode.single or mode == PlayMode.repeat):
             for i in range(0, rowCount):
                 self.playlist.append(i)
             self.index = self.ListInterface.tableWidget.currentRow()
@@ -194,7 +194,7 @@ class Main(FluentWindow):
                              songinfo[self.index][0])
 
     def nextSong(self, distance: int = 1, isAuto: bool = False):
-        # "isAuto" is for recongize whether the function is actived by the button or a stop signal
+        # "isAuto" 用来判断是否是player的stop触发
         if self.musicInterface.fp == "":
             return
         if isAuto and self.musicInterface.isplay:
@@ -207,7 +207,8 @@ class Main(FluentWindow):
         if playmode == PlayMode.order:
             self.index += distance
             if self.index < 0:
-                InfoBar.error("","已经到顶了",parent=self.musicInterface)
+                InfoBar.error("", self.tr("已经到顶了!"),
+                              parent=self.musicInterface)
                 self.index -= distance
 
         elif playmode == PlayMode.random:
@@ -229,16 +230,16 @@ class Main(FluentWindow):
 
         try:
             id = self.playlist[self.index]
-            self.musicInterface.switchSong(
-                songPath[id], songinfo[id], id)
+            self.musicInterface.switchSong(songPath[id], songinfo[id], id)
             table.setCurrentItem(table.item(id, 0))
         except IndexError:
-            InfoBar.error("", "已经到极限了！", parent=self.musicInterface)
+            InfoBar.error("", self.tr("已经到极限了！"), parent=self.musicInterface)
             self.index -= distance
-            
-    def deleteSong(self,row:int):
-        path=self.ListInterface.songPosition[row]
-        message=MessageBox("删除歌曲", f"确定删除{path}吗？", parent=self.ListInterface)
+
+    def deleteSong(self, row: int):
+        path = self.ListInterface.songPosition[row]
+        message = MessageBox(
+            self.tr("删除歌曲"), self.tr(f"确定删除{path}吗？"), parent=self.ListInterface)
         message.show()
         if message.exec():
             try:
@@ -247,15 +248,14 @@ class Main(FluentWindow):
                 self.playlist.remove(row)
                 self.ListInterface.songPosition.remove(path)
                 self.ListInterface.songInfos.pop(row)
-                InfoBar.success("删除成功！", "", parent=self.ListInterface)
+                InfoBar.success(self.tr("删除成功！"), "",
+                                parent=self.ListInterface)
                 self.ListInterface.initTabel()
                 self.resetList()
                 self.switchSong(self.index)
             except Exception as e:
-                InfoBar.error("删除失败！", str(e), parent=self.ListInterface,duration=2000)
-        else:
-            pass
-            
+                InfoBar.error(self.tr("删除失败！"), str(
+                    e), parent=self.ListInterface, duration=2000)
 
     def closeEvent(self, event) -> None:
         event.ignore()
@@ -263,6 +263,7 @@ class Main(FluentWindow):
 
 
 class tray(QSystemTrayIcon):
+
     def __init__(self, window: Main):
         super().__init__()
         self.window = window
@@ -272,12 +273,9 @@ class tray(QSystemTrayIcon):
         self.menu = SystemTrayMenu(self.window)
         self.setContextMenu(self.menu)
         self.action = [
-            Action("⏸️    暂停",
-                   triggered=self.window.musicInterface.player.pause),
-            Action("▶️       播放",
-                   triggered=self.window.musicInterface.player.play),
-            Action("        退出",
-                   triggered=exit)
+            Action("⏸️    暂停", triggered=self.window.musicInterface.player.pause),
+            Action(FIF.PLAY, "播放", triggered=self.window.musicInterface.player.play),
+            Action(FIF.BACK_TO_WINDOW, "退出", triggered=exit)
         ]
         self.menu.addActions(self.action)
         self.activated.connect(self.on_tray_activated)
@@ -300,7 +298,7 @@ if __name__ == '__main__':
     locale = cfg.get(cfg.language).value
     fluentTranslator = FluentTranslator(locale)
     settingTranslator = QTranslator()
-    settingTranslator.load(locale, "settings", ".", "resource/i18n")
+    settingTranslator.load(locale, "setting_interface", ".", "resource/i18n")
 
     app.installTranslator(fluentTranslator)
     app.installTranslator(settingTranslator)
