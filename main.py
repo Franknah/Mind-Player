@@ -84,25 +84,25 @@ class Main(FluentWindow):
         track = self.ListInterface.songInfos[row][6]
 
         actions = [
-            Action(FIF.PLAY, self.tr('播放'),
+            Action(FIF.PLAY, self.tr('Play'),
                    triggered=lambda: self.switchSong(row)),
-            Action(FIF.ADD, self.tr('下一首播放'),
+            Action(FIF.ADD, self.tr('Play next'),
                    triggered=lambda: self.setNextMusic(row)),
-            Action(FIF.REMOVE, self.tr("从播放列表中移除"),
+            Action(FIF.REMOVE, self.tr("Remove from playlist"),
                    triggered=lambda: self.playlist.remove(row)),
-            Action(FIF.EDIT, self.tr("编辑信息"),
+            Action(FIF.EDIT, self.tr("Edit infomation"),
                    triggered=lambda: self.ListInterface.creatDialog(row)),
             Action(FIF.INFO,
-                   self.tr('更多信息'),
+                   self.tr('More infomation'),
                    triggered=lambda: MessageBox(
-                       self.tr("详细信息"), "标题 : " + title + "\n\n" +
+                       self.tr("Detail Information"), "标题 : " + title + "\n\n" +
                        "艺术家 :" + artist + "\n\n" +
                        "专辑 : " + album + "\n\n" +
                        "长度 : " + length + "\n\n" +
                        "路径 : " + path.replace("\\", "/") + "\n\n" +
                        "年份 : " + year + "\n\n" +
                        "编号 : " + track, self).show()),
-            Action(FIF.DELETE, self.tr('删除'),
+            Action(FIF.DELETE, self.tr('Delete'),
                    triggered=lambda: self.deleteSong(row)),
         ]
         self.menu.addActions(actions)
@@ -132,10 +132,12 @@ class Main(FluentWindow):
 
     def initNavigation(self):
         # self.addSubInterface(self.searchInterface, FluentIcon.SEARCH, 'Search')
-        self.addSubInterface(self.musicInterface, FIF.MUSIC, self.tr("播放页"))
-        self.addSubInterface(self.ListInterface, FIF.ALBUM, self.tr("播放列表"))
+        self.addSubInterface(self.musicInterface,
+                             FIF.MUSIC, self.tr("Music Page"))
+        self.addSubInterface(self.ListInterface, FIF.ALBUM,
+                             self.tr("Playlist Page"))
         self.addSubInterface(self.settingInterface, FIF.SETTING,
-                             self.tr("设置"), NavigationItemPosition.BOTTOM)
+                             self.tr("Setting"), NavigationItemPosition.BOTTOM)
         self.switchTo(self.musicInterface)
 
     def initWindow(self):
@@ -207,7 +209,7 @@ class Main(FluentWindow):
         if playmode == PlayMode.order:
             self.index += distance
             if self.index < 0:
-                InfoBar.error("", self.tr("已经到顶了!"),
+                InfoBar.error("", self.tr("Already First Item!"),
                               parent=self.musicInterface)
                 self.index -= distance
 
@@ -233,13 +235,14 @@ class Main(FluentWindow):
             self.musicInterface.switchSong(songPath[id], songinfo[id], id)
             table.setCurrentItem(table.item(id, 0))
         except IndexError:
-            InfoBar.error("", self.tr("已经到极限了！"), parent=self.musicInterface)
+            InfoBar.error("", self.tr("Already Last Item!"),
+                          parent=self.musicInterface)
             self.index -= distance
 
     def deleteSong(self, row: int):
         path = self.ListInterface.songPosition[row]
         message = MessageBox(
-            self.tr("删除歌曲"), self.tr(f"确定删除{path}吗？"), parent=self.ListInterface)
+            self.tr("Delete Music File"), self.tr(f"Are you sure to delete '{path}' ?"), parent=self.ListInterface)
         message.show()
         if message.exec():
             try:
@@ -248,13 +251,13 @@ class Main(FluentWindow):
                 self.playlist.remove(row)
                 self.ListInterface.songPosition.remove(path)
                 self.ListInterface.songInfos.pop(row)
-                InfoBar.success(self.tr("删除成功！"), "",
+                InfoBar.success(self.tr("Successfully delete!"), "",
                                 parent=self.ListInterface)
                 self.ListInterface.initTabel()
                 self.resetList()
                 self.switchSong(self.index)
             except Exception as e:
-                InfoBar.error(self.tr("删除失败！"), str(
+                InfoBar.error(self.tr("Fail to delete!"), str(
                     e), parent=self.ListInterface, duration=2000)
 
     def closeEvent(self, event) -> None:
@@ -299,10 +302,11 @@ if __name__ == '__main__':
     fluentTranslator = FluentTranslator(locale)
     settingTranslator = QTranslator()
     settingTranslator.load(locale, "setting_interface", ".", "resource/i18n")
-
+    mainTranslator = QTranslator()
+    mainTranslator.load(locale, "main", ".", "resource/i18n")
     app.installTranslator(fluentTranslator)
     app.installTranslator(settingTranslator)
-
+    app.installTranslator(mainTranslator)
     # create main window
     w = Main()
     l = LyricWindow()
