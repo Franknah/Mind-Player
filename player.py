@@ -15,7 +15,7 @@ from resource.ui.player_ui import Ui_Form
 from qfluentwidgets import (isDarkTheme, setTheme, RoundMenu, InfoBar,
                             InfoBarPosition, Theme, FluentIcon as FiF,
                             FlyoutViewBase, Flyout, FlyoutAnimationType,
-                            Slider, Action, ToolTipFilter,FluentIconBase)
+                            Slider, Action, ToolTipFilter, FluentIconBase)
 from Parser import Lyric
 from config import cfg
 
@@ -32,23 +32,27 @@ class PlayMode(enum.Enum):
     repeat = 2
     single = 3
 
-class PIF(FluentIconBase,enum.Enum):
+
+class PIF(FluentIconBase, enum.Enum):
     # Private Icon
     order = "play in order"
     random = "random"
     repeat = "repeat"
-    single= "single repeat"
+    single = "single repeat"
     sound = "sound"
-    soundEmpty="sound empty"
+    soundEmpty = "sound empty"
     lyric = "lyric"
-    def path(self,theme=cfg.theme):
+
+    def path(self, theme=cfg.theme):
         color = "dark" if isDarkTheme() else "light"
         return f"resource/icon/{self.value}-{color}.svg"
-    
+
+
 class MyAudioPlayer(QWidget, Ui_Form):
     '''播放页'''
     modeChanged = Signal()
     lyricChanged = Signal()
+
     def __init__(self):
         super().__init__()
         # self.fp =r"resource\たぶん-YOASOBI.mp3"
@@ -88,7 +92,6 @@ class MyAudioPlayer(QWidget, Ui_Form):
 
     def initWindow(self):
         self.lyric_dict = Lyric(self.lyricPath)
-
 
     def show_lyric(self, position: int):
         # 查找对应的歌词并显示在标签上
@@ -174,6 +177,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
         elif mode == PlayMode.single:
             self.toolButtonPlayMode.setToolTip("单曲循环")
         self.modeChanged.emit()
+
     @Slot()
     def StateInit(self):
         if self.fp == "":
@@ -236,7 +240,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
     def dragSlider(self):
         self.label_lyric.setText("")
         self.setToolTip("")
-        if self.slider.underMouse(): # 解决拖动时仍播放
+        if self.slider.underMouse():  # 解决拖动时仍播放
             self.player.pause()
         else:
             self.player.play()
@@ -250,6 +254,7 @@ class MyAudioPlayer(QWidget, Ui_Form):
             return
         self.player.setPosition(sc)
         self.updateTime(self.player.position())
+
     @Slot()
     def clickSlider(self):
         if self.fp == "":
@@ -270,9 +275,9 @@ class MyAudioPlayer(QWidget, Ui_Form):
     def changeLyric(self):
         '''切换歌词'''
         try:
-            path, _ = QFileDialog().getOpenFileName(self, 
+            path, _ = QFileDialog().getOpenFileName(self,
                                                     "选择歌词文件",
-                                                    cfg.musicFolders.value[0], 
+                                                    cfg.musicFolders.value[0],
                                                     filter="*.lrc")
             if path == "":
                 return
