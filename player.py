@@ -4,18 +4,21 @@ import sys
 import re
 import os
 import io
+from functools import singledispatchmethod
 from typing import Optional
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtCore import QUrl, Slot, QSignalBlocker, Qt, Signal
 from PySide6.QtGui import QPixmap, QAction, QIcon
 from PySide6.QtWidgets import (QApplication, QWidget, QFrame,
-                               QFileDialog, QVBoxLayout, QLabel)
+                               QFileDialog, QVBoxLayout, QLabel, QHBoxLayout)
 # from PySide6.QtMultimedia import QMediaFormat
 from resource.ui.player_ui import Ui_Form
 from qfluentwidgets import (isDarkTheme, setTheme, RoundMenu, InfoBar,
                             InfoBarPosition, Theme, FluentIcon as FiF,
                             FlyoutViewBase, Flyout, FlyoutAnimationType,
-                            Slider, Action, ToolTipFilter, FluentIconBase)
+                            Slider, Action, ToolTipFilter, FluentIconBase, CaptionLabel, FlyoutAnimationManager)
+from qfluentwidgets.components.widgets.flyout import PullUpFlyoutAnimationManager
+from qfluentwidgets.multimedia.media_play_bar import VolumeView
 from Parser import Lyric
 from config import cfg
 
@@ -69,12 +72,10 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.block.unblock()
         self.menu = RoundMenu(parent=self)
         self.createMenu()
-        self.volumnSlider = Slider(Qt.Orientation.Horizontal)
-        self.volumnSlider.setRange(0, 100)
-        self.volumnSlider.setValue(100)
         self.setQss()
 
         self.switchMode(PlayMode.order)
+        self.makeFlyout()
         self.shareSignal()
         self.initWindow()
 
@@ -87,8 +88,20 @@ class MyAudioPlayer(QWidget, Ui_Form):
         self.slider.clicked.connect(self.clickSlider)
         self.slider.sliderReleased.connect(self.releaseSlider)
         self.pushButtonSwitch.clicked.connect(self.changeLyric)
-        self.toolButtonVolumn.clicked.connect(lambda: Flyout.make(CustomFlyoutView(
-            self), self.toolButtonVolumn, self, FlyoutAnimationType.PULL_UP))
+        self.toolButtonVolumn.clicked.connect(self._showVolumeFlyout)
+
+    def makeFlyout(self):
+        self.flyoutbase = CustomFlyoutView(self)
+        self.volumeFlyout = Flyout(self.flyoutbase, self.window(), False)
+        self.volumeFlyout.hide()
+
+    def _showVolumeFlyout(self):
+        if self.volumeFlyout.isVisible():
+            return
+
+        # pos = PullUpFlyoutAnimationManager(self.volumeFlyout).position(self)
+        self.volumeFlyout.exec(
+            FlyoutAnimationManager.make(FlyoutAnimationType.PULL_UP, self.volumeFlyout).position(self.toolButtonVolumn))
 
     def initWindow(self):
         self.lyric_dict = Lyric(self.lyricPath)
@@ -104,11 +117,8 @@ class MyAudioPlayer(QWidget, Ui_Form):
         with open(f'resource/qss/{color}/player.qss', encoding='utf-8') as f:
             self.setStyleSheet(f.read())
         self.switchMode(self.playMode)
-        if self.volumnSlider.value() == 0:
-            self.toolButtonVolumn.setIcon(PIF.soundEmpty)
-        else:
-            self.toolButtonVolumn.setIcon(PIF.sound)
         self.toolButtonDtLrc.setIcon(PIF.lyric)
+        self.toolButtonVolumn.setIcon(PIF.sound)
 
     def createMenu(self):
         color = 'dark' if isDarkTheme() else 'light'
@@ -152,16 +162,21 @@ class MyAudioPlayer(QWidget, Ui_Form):
             self.setPlayState(QMediaPlayer.PlaybackState.PlayingState)
         except FileNotFoundError:
             InfoBar.error("错误", f"找不到文件'{file}'", parent=self)
-
+            raise FileNotFoundError
         except PermissionError:
             InfoBar.error("权限错误", "没有足够的权限", parent=self)
 
     def lyricSetting(self):
         if self.fp in cfg.lyricFolders.value:
             self.label_lyric.setText("")
-            self.lyricPath = os.path.normpath(cfg.lyricFolders.value[self.fp])
-        else:
-            self.lyricPath = ""
+            try:
+                self.lyricPath = os.path.normpath(
+                    cfg.lyricFolders.value[self.fp])
+                self.lyric_dict.path = self.lyricPath
+                return
+            except FileNotFoundError:
+                InfoBar.error("错误", f"找不到歌词文件'{self.lyricPath}'", parent=self)
+        self.lyricPath = ""
         self.lyric_dict.path = self.lyricPath
 
     def switchMode(self, mode: PlayMode):
@@ -194,7 +209,12 @@ class MyAudioPlayer(QWidget, Ui_Form):
             self.player.pause()
             self.isplay = True
 
-    def setPlayState(self, state: QMediaPlayer.PlaybackState):
+    @singledispatchmethod
+    def setPlayState(self, state):
+        pass
+
+    @setPlayState.register(QMediaPlayer.PlaybackState)
+    def _(self, state: QMediaPlayer.PlaybackState):
         if state == self.player.PlaybackState.StoppedState:
             self.pushButton.setChecked(False)
             self.pushButton.setIcon(r"resource\icon\stop.ico")
@@ -207,6 +227,20 @@ class MyAudioPlayer(QWidget, Ui_Form):
             self.pushButton.setChecked(False)
             self.pushButton.setIcon(r"resource\icon\pause.ico")
             self.pushButton.setText("播放")
+        self.StateInit()
+
+    @setPlayState.register(int)
+    def _(self, state: int):
+        if state == 0:
+            self.pushButton.setChecked(False)
+            self.pushButton.setIcon(r"resource\icon\pause.ico")
+            self.pushButton.setText("播放")
+        if state == 1:
+            self.pushButton.setChecked(True)
+            self.pushButton.setIcon(r"resource\icon\play.ico")
+            self.pushButton.setText("暂停")
+        else:
+            return
         self.StateInit()
 
     @Slot()
@@ -283,12 +317,11 @@ class MyAudioPlayer(QWidget, Ui_Form):
                 return
 
             self.lyricPath = os.path.normpath(path)
-            self.lyric_dict
+            self.lyric_dict = Lyric(self.lyricPath)
             dict = cfg.lyricFolders.value.copy()
 
             dict[self.fp] = self.lyricPath
             cfg.set(cfg.lyricFolders, dict)
-
         except PermissionError:
             InfoBar.error("权限错误", "已经被其他程序访问或没有权限打开文件！", parent=self)
 
@@ -297,22 +330,36 @@ class CustomFlyoutView(FlyoutViewBase):
 
     def __init__(self, parent: MyAudioPlayer = None):
         super().__init__(parent)
-        self.vBoxLayout = QVBoxLayout(self)
-        self.slider = parent.volumnSlider
-        self.slider.setValue(parent.audioOutput.volume()*100)
-        self.slider.setMaximum(100)
-        self.labelLeft = QLabel(self)
+        self._parent = parent
+        _volume = int(parent.audioOutput.volume()*100)
+        self.hBoxLayout = QHBoxLayout(self)
+        self.slider = Slider(Qt.Orientation.Horizontal)
+        self.slider.setRange(0, 100)
+        # self.slider.setFixedWidth(208)
+        # self.setFixedSize(295, 64)
+        self.slider.setValue(_volume)
+        self.labelLeft = CaptionLabel()
         self.labelLeft.setAlignment(Qt.AlignCenter)
-        self.slider.valueChanged.connect(self.changeVolumn)
-        self.vBoxLayout.setSpacing(12)
-        self.vBoxLayout.setContentsMargins(20, 16, 20, 16)
-        self.vBoxLayout.addWidget(self.slider)
+        self.labelLeft.setNum(_volume)
+        self.hBoxLayout.setSpacing(12)
+        self.hBoxLayout.setContentsMargins(20, 16, 20, 16)
+        self.hBoxLayout.addWidget(self.slider)
+        # self.hBoxLayout.addWidget(self.labelLeft)
+        self.slider.valueChanged.connect(self.sliderMove)
+        self.labelLeft.move(self.slider.width()/2-self.labelLeft.width()/2, 0)
 
-    def changeVolumn(self):
+    def sliderMove(self):
         value = self.slider.value()
-        self.parent().parent().audioOutput.setVolume(value/100)
-        self.labelLeft.setText("当前音量："+str(self.slider.value()))
-        self.parent().parent().setQss()
+        self._parent.audioOutput.setVolume(float(value/100))
+        self.labelLeft.setNum(value)
+        self.labelLeft.adjustSize()
+        tr = self.labelLeft.fontMetrics().boundingRect(str(value))
+        self.labelLeft.move(self.width() - 20 - tr.width(),
+                            self.height()//2 - tr.height()//2)
+        if value == 0:
+            self._parent.toolButtonVolumn.setIcon(PIF.soundEmpty)
+        else:
+            self._parent.toolButtonVolumn.setIcon(PIF.sound)
 
 
 if __name__ == '__main__':

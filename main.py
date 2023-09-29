@@ -1,20 +1,19 @@
 import sys
-import os
 import random
 from config import cfg
 from list import PlayList
 from desktopLyric import LyricWindow
 from player import MyAudioPlayer, PlayMode
 from setting_interface import SettingInterface
-
 from functools import singledispatchmethod
 from PySide6.QtWidgets import (
-    QApplication, QTableWidgetItem, QSystemTrayIcon, QTableView)
-from qfluentwidgets import (NavigationItemPosition, FluentIcon as FIF, isDarkTheme, FluentTranslator, Theme, setTheme,
-                            SplashScreen, InfoBar, FluentWindow, SystemTrayMenu, Action, RoundMenu, MenuAnimationType,
-                            MessageBox)
+    QApplication, QTableWidgetItem, QSystemTrayIcon, QTableView, QWidget, QHBoxLayout)
+from qfluentwidgets import (NavigationItemPosition, FluentIcon as FIF, FluentTranslator, Theme, setTheme,
+                            SplashScreen, InfoBar, FluentWindow, SystemTrayMenu,
+                            Action, RoundMenu, MenuAnimationType,
+                            MessageBox, SubtitleLabel, PushButton, setFont)
 from PySide6.QtGui import QIcon, QContextMenuEvent, QMouseEvent
-from PySide6.QtCore import (Qt, QTranslator, QSize, QTimer, QEventLoop)
+from PySide6.QtCore import (Qt, QTranslator, QSize, QTimer, QEventLoop, Signal)
 
 
 class Main(FluentWindow):
@@ -31,6 +30,7 @@ class Main(FluentWindow):
         self.musicInterface = MyAudioPlayer()
         self.ListInterface = PlayList()
         self.settingInterface = SettingInterface()
+        self.widget = Widget(self.tr("Could not find any music files..."))
         self.shareSignal()
         self.initNavigation()
         self.resetList()
@@ -70,18 +70,25 @@ class Main(FluentWindow):
         self.musicInterface.toolButtonDtLrc.clicked.connect(lambda: l.show())
         self.musicInterface.lyricChanged.connect(
             lambda: l.showLyric(self.musicInterface.label_lyric.text()))
+        self.ListInterface.emptySignal.connect(self.initNavigation)
+        self.widget.button.clicked.connect(self.refresh)
+
+    def refresh(self):
+        self.ListInterface.initWindow()
+        self.initNavigation()
 
     def contextEvent(self, e: QContextMenuEvent) -> None:
         e.ignore()
         self.menu = RoundMenu()
         row = self.ListInterface.tableWidget.itemAt(e.pos()).row()
-        title = self.ListInterface.songInfos[row][0]
-        artist = self.ListInterface.songInfos[row][1]
-        album = self.ListInterface.songInfos[row][2]
-        length = self.ListInterface.songInfos[row][3]
-        path = self.ListInterface.songInfos[row][4]
-        year = self.ListInterface.songInfos[row][5]
-        track = self.ListInterface.songInfos[row][6]
+        info = self.ListInterface.songInfos[row]
+        title = info[0]
+        artist = info[1]
+        album = info[2]
+        length = info[3]
+        path = info[4]
+        year = info[5]
+        track = info[6]
 
         actions = [
             Action(FIF.PLAY, self.tr('Play'),
@@ -131,14 +138,20 @@ class Main(FluentWindow):
             tabel.scrollToItem(tabel.currentItem())
 
     def initNavigation(self):
+        index = self.stackedWidget.currentIndex()
         # self.addSubInterface(self.searchInterface, FluentIcon.SEARCH, 'Search')
         self.addSubInterface(self.musicInterface,
                              FIF.MUSIC, self.tr("Music Page"))
-        self.addSubInterface(self.ListInterface, FIF.ALBUM,
-                             self.tr("Playlist Page"))
+        if self.ListInterface.songPosition == []:
+            self.addSubInterface(self.widget,
+                                 FIF.ALBUM, self.tr("Playlist Page"))
+        else:
+            self.addSubInterface(self.ListInterface, FIF.ALBUM,
+                                 self.tr("Playlist Page"))
         self.addSubInterface(self.settingInterface, FIF.SETTING,
                              self.tr("Setting"), NavigationItemPosition.BOTTOM)
-        self.switchTo(self.musicInterface)
+        self.stackedWidget.setCurrentIndex(
+            index) if index > 0 else self.stackedWidget.setCurrentIndex(0)
 
     def initWindow(self):
         self.setWindowIcon(QIcon(r"resource\icon\player.ico"))
@@ -274,13 +287,15 @@ class tray(QSystemTrayIcon):
         self.setToolTip(self.window.windowTitle())
 
         self.menu = SystemTrayMenu(self.window)
-        self.setContextMenu(self.menu)
         self.action = [
-            Action("⏸️    暂停", triggered=self.window.musicInterface.player.pause),
-            Action(FIF.PLAY, "播放", triggered=self.window.musicInterface.player.play),
+            Action(FIF.PAUSE, "暂停",
+                   triggered=lambda: self.window.musicInterface.setPlayState(0)),
+            Action(
+                FIF.PLAY, "播放", triggered=lambda: self.window.musicInterface.setPlayState(1)),
             Action(FIF.BACK_TO_WINDOW, "退出", triggered=exit)
         ]
         self.menu.addActions(self.action)
+        self.setContextMenu(self.menu)
         self.activated.connect(self.on_tray_activated)
 
     def on_tray_activated(self, reason):
@@ -290,6 +305,21 @@ class tray(QSystemTrayIcon):
             elif self.window.isMinimized():
                 self.window.showNormal()
                 self.window.raise_()
+
+
+class Widget(QWidget):
+    def __init__(self, text: str, parent=None):
+        super().__init__(parent=parent)
+        self.label = SubtitleLabel(text, self)
+        self.setObjectName("List")
+        self.button = PushButton(self)
+        self.button.setIcon(FIF.UPDATE)
+        self.button.setText(self.tr("Refresh"))
+        self.hBoxLayout = QHBoxLayout(self)
+
+        setFont(self.label, 24)
+        self.label.setAlignment(Qt.AlignCenter)
+        self.hBoxLayout.addWidget(self.label, 1, Qt.AlignCenter)
 
 
 if __name__ == '__main__':

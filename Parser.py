@@ -47,9 +47,15 @@ class Lyric:
     def getLyric(self, time: float):
         """return the lryic in ms"""
         # 返回距离歌词最近且大于当前时间的时间戳（有点乱。。摆了。。）
-        timestamp = min(self.AllTime,
-                        key=lambda x: x - time if x > time else self.AllTime[-1]-time)
-        return self.AllLyric[self.indexOf(timestamp)-1]
+        for timestamp in self.AllTime:
+            if timestamp >= time :
+                if self.indexOf(timestamp)-1 < 0:
+                    return self.AllLyric[0]
+                return self.AllLyric[self.indexOf(timestamp)-1]
+            else:
+                if self.AllTime.index(timestamp) == len(self.AllTime)-1:
+                    return self.AllLyric[self.indexOf(timestamp)]
+                continue
 
     @property
     def AllTime(self):

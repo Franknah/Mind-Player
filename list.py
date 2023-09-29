@@ -1,17 +1,18 @@
 from PySide6.QtWidgets import (
-    QWidget, QTableWidgetItem, QAbstractItemView, QApplication, QTableView)
-from PySide6.QtCore import Qt
+    QWidget, QTableWidgetItem, QAbstractItemView, QApplication, QTableView,QHBoxLayout)
+from PySide6.QtCore import Qt,Signal
 from resource.ui.list_ui import Ui_Form
 from PySide6.QtGui import QMouseEvent
 from qfluentwidgets import (
-    isDarkTheme, Theme, setTheme, FluentIcon, InfoBar, Dialog, LineEdit, ComboBox,
-    PrimaryPushButton)
+    isDarkTheme, Theme, setTheme, FluentIcon as FIF, InfoBar, Dialog, LineEdit, ComboBox,
+    PrimaryPushButton,SubtitleLabel,PushButton,setFont)
 from config import cfg
 import sys
 import os
 
 from Parser import Music
 from mutagen import File
+
 
 
 class EditDialog(Dialog):
@@ -46,24 +47,24 @@ class EditDialog(Dialog):
 
 
 class PlayList(QWidget, Ui_Form):
-
+    emptySignal = Signal()
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.setObjectName("List")
-        self.pushButton.setIcon(FluentIcon.UPDATE)
+        self.pushButton.setIcon(FIF.UPDATE)
         self.pushButton.clicked.connect(self.initWindow)
         self.tableWidget.mousePressEvent = self.pressEvent
         # self.tableWidget.mouseReleaseEvent = self.releaseEvent
         self.initWindow()
-
         self.__connectSignalToSlot()
-
     def initWindow(self):
         '''refresh the page'''
         try:
             self.songInfos, self.songPosition = self.getMusicinfo(
                 cfg.musicFolders.value)
+            if len(self.songPosition) == 0:
+                self.emptySignal.emit()
         except PermissionError:
             InfoBar.error("权限错误", "没有足够的权限", parent=self)
         self.initTabel()
